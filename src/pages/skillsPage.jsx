@@ -29,21 +29,29 @@ export default function SkillsPage() {
         userAPI.getMe(),
       ]);
 
+      console.log('🔍 Skills Page - Current User:', userData);
+      console.log('🔍 Skills Page - All Skills:', skillsData);
+
       setSkills(skillsData || []);
       setCurrentUser(userData);
 
       // Fetch owner details
       const ownersMap = {};
       for (const skill of skillsData) {
-        if (!ownersMap[skill.owner_id]) {
+        const ownerId = skill.owner_id || skill.ownerId || skill.owner;
+        console.log(`🔍 Skills Page - Skill "${skill.title}" owner_id:`, ownerId);
+        
+        if (ownerId && !ownersMap[ownerId]) {
           try {
-            const owner = await userAPI.getProfile(skill.owner_id);
-            ownersMap[skill.owner_id] = owner;
+            const owner = await userAPI.getProfile(ownerId);
+            console.log(`🔍 Skills Page - Fetched owner for ${ownerId}:`, owner);
+            ownersMap[ownerId] = owner;
           } catch (err) {
             console.error('Failed to fetch owner:', err);
           }
         }
       }
+      console.log('🔍 Skills Page - Owners Map:', ownersMap);
       setOwners(ownersMap);
     } catch (err) {
       console.error('Failed to fetch skills:', err);
@@ -120,7 +128,7 @@ export default function SkillsPage() {
             <SkillCard
               key={skill.id}
               skill={skill}
-              owner={owners[skill.owner_id]}
+              owner={owners[skill.owner_id || skill.ownerId || skill.owner]}
               isOwner={skill.owner_id === currentUser?.id}
               onConnect={handleConnect}
             />

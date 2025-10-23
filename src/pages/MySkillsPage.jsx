@@ -21,11 +21,34 @@ export default function MySkillsPage() {
 
   const fetchData = async () => {
     try {
+      console.log('========================================');
+      console.log('🔍 MY SKILLS PAGE - FETCHING DATA...');
+      console.log('========================================');
+      
       const user = await userAPI.getMe();
       setCurrentUser(user);
+      
+      console.log('🔍 CURRENT USER DETAILS:');
+      console.log('   - ID:', user?.id);
+      console.log('   - Name:', user?.full_name);
+      console.log('   - Email:', user?.email);
+      console.log('   - Full Object:', user);
 
       const allSkills = await skillAPI.listSkills();
-      const filtered = allSkills.filter((s) => s.owner_id === user.id);
+      console.log('🔍 All Skills:', allSkills);
+
+      // Normalize user id (support id or _id)
+      const userId = String(user?.id ?? user?._id ?? '');
+      console.log('🔍 User ID (normalized):', userId);
+
+      // Robustly determine owner field on skill (support owner_id, ownerId, owner)
+      const filtered = (allSkills || []).filter((s) => {
+        const ownerVal = s?.owner_id ?? s?.ownerId ?? s?.owner ?? '';
+        console.log(`🔍 Skill "${s.title}" owner:`, ownerVal, '=== userId?', String(ownerVal) === userId);
+        return String(ownerVal) === userId;
+      });
+
+      console.log('🔍 Filtered Skills (My Skills):', filtered);
       setMySkills(filtered);
     } catch (err) {
       console.error('Failed to fetch skills:', err);
@@ -54,6 +77,7 @@ export default function MySkillsPage() {
           .filter((t) => t),
       };
 
+      console.log('🔍 Creating skill with data:', skillData);
       await skillAPI.createSkill(skillData);
       alert('✓ Skill created successfully!');
 

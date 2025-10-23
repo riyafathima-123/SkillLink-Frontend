@@ -1,43 +1,52 @@
 import React, { useState } from 'react';
 import { BookOpen, User } from 'lucide-react';
+import { userAPI } from '../services/api';
 
 const DEMO_USERS = [
   {
     id: '83eaa959-ed83-48be-8cbf-a80ba272b585',
     name: 'Riya fathima',
     email: '22gcs02@meaec.edu.in',
-    token: 'ka6BpUABev7JOIxS5b23ZiExoEqdGGC3M1hGtB+3WZ7ZH3xxxWCctrnFCAEgaaqAfV8Sr/rJsQmKfAcTjnKsjg==',
   },
   {
     id: '257631aa-31ab-4c9c-816f-497877e5a554',
     name: 'Shishana',
     email: '22ncs03@meaec.edu.in',
-    token: 'ka6BpUABev7JOIxS5b23ZiExoEqdGGC3M1hGtB+3WZ7ZH3xxxWCctrnFCAEgaaqAfV8Sr/rJsQmKfAcTjnKsjg==' ,
   },
   {
     id: '1c203541-2549-41ba-9f94-d0069aecfc97',
     name: 'Rineesha pk',
     email: '22mcs21@meaec.edu.in',
-    token: 'ka6BpUABev7JOIxS5b23ZiExoEqdGGC3M1hGtB+3WZ7ZH3xxxWCctrnFCAEgaaqAfV8Sr/rJsQmKfAcTjnKsjg==' ,
   },
 ];
 
 export default function LoginPage({ onLogin }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleLogin = async (user) => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      onLogin(user.token, {
-        id: user.id,
-        full_name: user.name,
-        email: user.email,
-        bio: 'Welcome to SkillLink!',
-        avatar_url: null,
-      });
+    setError(null);
+    
+    try {
+      console.log('🔐 Logging in with email:', user.email);
+      
+      // Call backend login API
+      const response = await userAPI.login(user.email);
+      
+      console.log('🔐 Login response:', response);
+      
+      if (response.token && response.user) {
+        onLogin(response.token, response.user);
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } catch (err) {
+      console.error('❌ Login failed:', err);
+      setError(err.response?.data?.error || err.message || 'Login failed');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -60,6 +69,15 @@ export default function LoginPage({ onLogin }) {
             <strong>Demo Mode:</strong> Select any user to login
           </p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-red-700">
+              <strong>Error:</strong> {error}
+            </p>
+          </div>
+        )}
 
         {/* Login Buttons */}
         <div className="space-y-3">

@@ -33,6 +33,7 @@ api.interceptors.response.use(
 
 // ===== USER API =====
 export const userAPI = {
+  login: (email) => api.post('/auth/login', { email }), // Add login endpoint
   getMe: () => api.get('/users/me'),
   getProfile: (userId) => api.get(`/users/${userId}`),
   updateProfile: (data) => api.put('/users/me', data),

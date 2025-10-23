@@ -1,11 +1,36 @@
-import React, { useState } from 'react';
-import { Zap, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Zap, X, AlertCircle } from 'lucide-react';
+import { creditAPI } from '../services/api';
 
 export default function ConnectionModal({ skill, onConfirm, onClose }) {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [credits, setCredits] = useState(null);
+  const [loadingBalance, setLoadingBalance] = useState(true);
+
+  useEffect(() => {
+    fetchBalance();
+  }, []);
+
+  const fetchBalance = async () => {
+    try {
+      const data = await creditAPI.getBalance();
+      setCredits(data.balance);
+    } catch (err) {
+      console.error('Failed to fetch balance:', err);
+    } finally {
+      setLoadingBalance(false);
+    }
+  };
+
+  const hasEnoughCredits = credits !== null && credits >= skill.price;
 
   const handleConfirm = async () => {
+    if (!hasEnoughCredits) {
+      alert('Insufficient credits! You need ' + skill.price + ' credits but only have ' + credits);
+      return;
+    }
+    
     setLoading(true);
     try {
       await onConfirm({ skill_id: skill.id, message });
@@ -28,11 +53,26 @@ export default function ConnectionModal({ skill, onConfirm, onClose }) {
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-          <p className="text-sm text-gray-700">
-            Cost: <span className="font-bold text-blue-600 flex items-center gap-1">
-              <Zap className="w-4 h-4" /> {skill.price} credits
-            </span>
-          </p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm text-gray-700">
+              Cost: <span className="font-bold text-blue-600 inline-flex items-center gap-1">
+                <Zap className="w-4 h-4" /> {skill.price} credits
+              </span>
+            </p>
+            {!loadingBalance && (
+              <p className="text-sm text-gray-700">
+                Balance: <span className="font-bold text-green-600">{credits} credits</span>
+              </p>
+            )}
+          </div>
+          {!loadingBalance && !hasEnoughCredits && (
+            <div className="mt-2 flex items-start gap-2 bg-red-50 border border-red-200 rounded p-2">
+              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-red-700">
+                Insufficient credits! You need {skill.price - credits} more credits.
+              </p>
+            </div>
+          )}
         </div>
 
         <textarea
@@ -54,10 +94,10 @@ export default function ConnectionModal({ skill, onConfirm, onClose }) {
           </button>
           <button
             onClick={handleConfirm}
-            disabled={loading}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-2 rounded-lg font-semibold transition disabled:opacity-50"
+            disabled={loading || loadingBalance || !hasEnoughCredits}
+            className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white py-2 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Connecting...' : 'Send Request'}
+            {loading ? 'Connecting...' : loadingBalance ? 'Loading...' : 'Send Request'}
           </button>
         </div>
       </div>

@@ -8,7 +8,8 @@ export default function Header({ user, onLogout }) {
 
   useEffect(() => {
     fetchBalance();
-    const interval = setInterval(fetchBalance, 5000);
+    // Poll balance every 3 seconds to catch credit changes
+    const interval = setInterval(fetchBalance, 3000);
     return () => clearInterval(interval);
   }, []);
 

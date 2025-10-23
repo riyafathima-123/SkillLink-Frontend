@@ -68,11 +68,22 @@ export default function ConnectionsPage() {
   };
 
   const handleAccept = async (connectionId, price) => {
+    // Confirm before accepting
+    if (!window.confirm(`Accept this connection request? The learner will be charged ${price} credits.`)) {
+      return;
+    }
+
     try {
+      console.log('🔍 Accepting connection:', { connectionId, price });
+      
+      // Update connection status to accepted
+      // The backend should automatically handle credit transfer
       await connectionAPI.updateConnection(connectionId, { status: 'accepted' });
-      alert('✓ Connection accepted! Credits have been deducted.');
+      
+      alert(`✓ Connection accepted! ${price} credits have been transferred.`);
       fetchData();
     } catch (err) {
+      console.error('❌ Failed to accept connection:', err);
       alert('Error: ' + (err.response?.data?.error || err.message));
     }
   };

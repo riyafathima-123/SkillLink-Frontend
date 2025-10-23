@@ -8,6 +8,7 @@ export default function ConnectionsPage() {
   const [skills, setSkills] = useState({});
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('incoming'); // 'incoming' or 'outgoing'
 
   useEffect(() => {
     fetchData();
@@ -20,7 +21,19 @@ export default function ConnectionsPage() {
         userAPI.getMe(),
       ]);
 
-      setConnections(connectionsData || []);
+      console.log('🔍 Connections Page - Current User:', currentUserData);
+      console.log('🔍 Connections Page - All Connections:', connectionsData);
+
+      // Filter connections to show only those involving current user
+      const myConnections = (connectionsData || []).filter(
+        (conn) =>
+          conn.learner_id === currentUserData?.id ||
+          conn.teacher_id === currentUserData?.id
+      );
+
+      console.log('🔍 Connections Page - My Connections:', myConnections);
+
+      setConnections(myConnections);
       setCurrentUser(currentUserData);
 
       // Fetch related data
@@ -116,19 +129,71 @@ export default function ConnectionsPage() {
     return icons[status];
   };
 
+  // Separate incoming and outgoing requests
+  const incomingRequests = connections.filter(
+    (conn) => conn.teacher_id === currentUser?.id
+  );
+  const outgoingRequests = connections.filter(
+    (conn) => conn.learner_id === currentUser?.id
+  );
+
+  const displayedConnections = activeTab === 'incoming' ? incomingRequests : outgoingRequests;
+
   return (
     <div>
       <h2 className="text-3xl font-bold text-gray-800 mb-6">My Connections</h2>
 
-      {connections.length === 0 ? (
+      {/* Tabs */}
+      <div className="flex gap-4 mb-6">
+        <button
+          onClick={() => setActiveTab('incoming')}
+          className={`flex-1 py-3 px-6 rounded-lg font-semibold transition ${
+            activeTab === 'incoming'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-white text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          📥 Incoming Requests
+          {incomingRequests.length > 0 && (
+            <span className="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+              {incomingRequests.filter((c) => c.status === 'pending').length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('outgoing')}
+          className={`flex-1 py-3 px-6 rounded-lg font-semibold transition ${
+            activeTab === 'outgoing'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-white text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          📤 My Requests
+          {outgoingRequests.length > 0 && (
+            <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+              {outgoingRequests.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {displayedConnections.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg">
           <Zap className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500 text-lg">No connections yet</p>
-          <p className="text-gray-400">Start by finding skills to learn!</p>
+          <p className="text-gray-500 text-lg">
+            {activeTab === 'incoming'
+              ? 'No incoming requests'
+              : 'No outgoing requests'}
+          </p>
+          <p className="text-gray-400">
+            {activeTab === 'incoming'
+              ? 'When someone requests your skills, they will appear here'
+              : 'Start by finding skills to learn!'}
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {connections.map((conn) => {
+          {displayedConnections.map((conn) => {
             const learner = users[conn.learner_id];
             const teacher = users[conn.teacher_id];
             const skill = skills[conn.skill_id];
@@ -147,7 +212,7 @@ export default function ConnectionsPage() {
                     </h3>
                     <p className="text-sm text-gray-600 mb-3">
                       {isMyRequest
-                        ? `Requested from ${teacher?.full_name || 'Unknown'}`
+                        ? `Requested to ${teacher?.full_name || 'Unknown'}`
                         : `Request from ${learner?.full_name || 'Unknown'}`}
                     </p>
 

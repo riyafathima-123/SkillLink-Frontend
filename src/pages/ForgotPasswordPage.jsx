@@ -1,29 +1,26 @@
 import React, { useState } from 'react';
 import { BookOpen } from 'lucide-react';
-import { userAPI } from '../services/api';
+import { authAPI } from '../services/api';
 import { Link } from 'react-router-dom';
 
-export default function LoginPage({ onLogin }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
+  const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
+    setMessage(null);
     try {
-      const response = await userAPI.login(email, password);
-      if (response.token && response.user) {
-        onLogin(response.token, response.user);
-      } else {
-        throw new Error('Invalid login response');
-      }
+      const redirectTo = process.env.REACT_APP_RESET_REDIRECT || window.location.origin + '/';
+      await authAPI.resetPassword(email, { redirectTo });
+      setMessage(' A password reset link has been sent to the provided email address.');
     } catch (err) {
-      console.error('Login failed:', err);
-      setError(err.message || err.error || 'Login failed');
+      console.error('Reset failed', err);
+      setError(err.message || 'Failed to send reset email');
     } finally {
       setLoading(false);
     }
@@ -36,15 +33,19 @@ export default function LoginPage({ onLogin }) {
           <div className="flex justify-center mb-4">
             <BookOpen className="w-16 h-16 text-blue-600" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2 font-brand">SkillLink</h1>
-          <p className="text-gray-600">Learn & Share Skills Peer-to-Peer</p>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Reset your password</h1>
+          <p className="text-gray-600">Enter your email to receive a password reset link.</p>
         </div>
+
+        {message && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-green-700">{message}</p>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-red-700">
-              <strong>Error:</strong> {error}
-            </p>
+            <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
 
@@ -60,40 +61,17 @@ export default function LoginPage({ onLogin }) {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full border rounded-lg p-3"
-            />
-          </div>
-
-          <div className="text-right">
-            <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
-              Forgot password?
-            </Link>
-          </div>
-
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg font-semibold transition disabled:opacity-50"
           >
-            {loading ? 'Signing in...' : 'Sign in'}
+            {loading ? 'Sending...' : 'Send reset link'}
           </button>
         </form>
 
         <div className="mt-4 text-center">
-          <Link to="/signup" className="text-sm text-blue-600 hover:underline">
-            Don't have an account? Create one
-          </Link>
-        </div>
-
-        <div className="mt-6 pt-6 border-t text-center">
-          <p className="text-xs text-gray-500">Use your account to sign in.</p>
+          <Link to="/login" className="text-sm text-blue-600 hover:underline">Back to sign in</Link>
         </div>
       </div>
     </div>

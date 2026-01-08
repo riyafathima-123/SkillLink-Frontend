@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
+import SignUpPage from './pages/SignUpPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 import SkillsPage from './pages/skillsPage';
 import ConnectionsPage from './pages/ConnectionsPage';
 import MySkillsPage from './pages/MySkillsPage';
 import Header from './components/header';
 import Navigation from './components/Navigation';
-import { userAPI } from './services/api';
+import { userAPI, authAPI } from './services/api';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -24,6 +27,18 @@ export default function App() {
 
   const validateToken = async () => {
     try {
+      // Prefer Supabase client session validation when available
+      try {
+        const userResp = await authAPI.getUser();
+        if (userResp) {
+          setCurrentUser(userResp);
+          setIsLoggedIn(true);
+          return;
+        }
+      } catch (_) {
+        // fall through to backend validation
+      }
+
       const user = await userAPI.getMe();
       setCurrentUser(user);
       setIsLoggedIn(true);
@@ -43,6 +58,12 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    // sign out from Supabase as well
+    try {
+      authAPI.signOut();
+    } catch (e) {
+      console.warn('Supabase signOut failed', e);
+    }
     localStorage.removeItem('auth_token');
     setCurrentUser(null);
     setIsLoggedIn(false);
@@ -60,7 +81,17 @@ export default function App() {
   }
 
   if (!isLoggedIn) {
-    return <LoginPage onLogin={handleLogin} />;
+    return (
+      <Router>
+        <Routes>
+          <Route path="/signup" element={<SignUpPage onLogin={handleLogin} />} />
+          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="*" element={<Navigate to="/login" />} />
+        </Routes>
+      </Router>
+    );
   }
 
   return (

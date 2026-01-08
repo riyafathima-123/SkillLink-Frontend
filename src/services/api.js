@@ -3,12 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
 
-const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL || 'https://rxwdrchsncgobmgeonyn.supabase.co';
-const SUPABASE_KEY = process.env.REACT_APP_SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4d2RyY2hzbmNnb2JtZ2VvbnluIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDk0MDg4OCwiZXhwIjoyMDc2NTE2ODg4fQ.wzScgmbgVdz_U_u-Ubu52w4zz61jJnKy4aHrlx5s3O4';
+// Supabase config (for auth only, not for login)
+const SUPABASE_URL = process.env.REACT_APP_SUPABASE_URL;
+const SUPABASE_KEY = process.env.REACT_APP_SUPABASE_KEY;
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+let _supabase = null;
+export function getSupabase() {
+  if (_supabase) return _supabase;
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    throw new Error('Supabase not configured. Set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_KEY.');
+  }
+  _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+  return _supabase;
+}
 
-// Create Axios instance
+// Create Axios instance for backend calls
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -24,73 +33,147 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
 // Response interceptor - Handle errors
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token');
-      window.location.href = '/';
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
 
-// ===== AUTH (Supabase) =====
+// ===== AUTH API (Supabase) =====
 export const authAPI = {
-  signIn: async (email, password) => {
+  signUp: async (email, password, full_name = null) => {
     if (!SUPABASE_URL || !SUPABASE_KEY) {
-      throw new Error('Supabase not configured. Set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_KEY.');
+      throw new Error('Supabase not configured.');
     }
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return data;
-  },
-  signUp: async (email, password, name = null) => {
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      throw new Error('Supabase not configured. Set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_KEY.');
+
+    try {
+      // Step 1: Sign up in Supabase Auth
+      const { data, error } = await getSupabase().auth.signUp({
+        email,
+        password,
+        options: {
+          data: full_name ? { full_name } : undefined,
+          emailRedirectTo: process.env.REACT_APP_EMAIL_REDIRECT || `${window?.location?.origin}/auth/callback`,
+        },
+      });
+      if (error) throw error;
+
+      // Step 2: Register user in backend (in development, auto-confirms email)
+      try {
+        console.log('Registering user in backend...');
+        const backendResponse = await api.post('/auth/register', {
+          email,
+          password,
+          full_name: full_name || '',
+        });
+        console.log('Backend registration response:', backendResponse);
+      } catch (backendError) {
+        console.warn('Backend registration warning:', backendError);
+        // Don't throw - Supabase signup was successful, backend might sync later
+      }
+
+      return data;
+    } catch (err) {
+      console.error('Sign up error:', err);
+      throw new Error(err.message || 'Failed to create account');
     }
-    // Pass user metadata (e.g., full name) via the second `options` parameter
-    const credentials = { email, password };
-    const options = name ? { data: { name } } : undefined;
-    const { data, error } = await supabase.auth.signUp(credentials, options);
-    if (error) throw error;
-    return data;
   },
-  signOut: async () => supabase.auth.signOut(),
+
+  signOut: async () => getSupabase().auth.signOut(),
+
   getUser: async () => {
-    const { data, error } = await supabase.auth.getUser();
+    const { data, error } = await getSupabase().auth.getUser();
     if (error) throw error;
     return data.user;
   },
-  // Send password reset email (Supabase will send a reset link)
+
+  /**
+   * Send password reset email via BACKEND
+   */
   resetPassword: async (email, options = {}) => {
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      throw new Error('Supabase not configured.');
+    try {
+      const response = await api.post('/auth/reset-password', { email, ...options });
+      return response;
+    } catch (err) {
+      throw new Error(err.response?.data?.error || err.message || 'Failed to send reset email');
     }
-    // v2 API: resetPasswordForEmail
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, options);
-    if (error) throw error;
-    return data;
   },
-  // Send magic link (passwordless) for sign-in
+
+  /**
+   * Send magic link (passwordless sign-in) via BACKEND
+   */
   sendMagicLink: async (email, options = {}) => {
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      throw new Error('Supabase not configured.');
+    try {
+      const response = await api.post('/auth/send-magic-link', { email, ...options });
+      return response;
+    } catch (err) {
+      throw new Error(err.response?.data?.error || err.message || 'Failed to send magic link');
     }
-    const { data, error } = await supabase.auth.signInWithOtp({ email, options });
-    if (error) throw error;
-    return data;
+  },
+
+  /**
+   * Verify OTP token (after user clicks magic link)
+   */
+  verifyOtp: async (email, token, type = 'magiclink') => {
+    try {
+      const { data, error } = await getSupabase().auth.verifyOtp({
+        email,
+        token,
+        type,
+      });
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      throw new Error(err.message || 'Failed to verify OTP');
+    }
   },
 };
 
 // ===== USER API =====
 export const userAPI = {
-  // use Supabase auth for login; returns { token, user }
+  /**
+   * Login via BACKEND endpoint
+   * Backend validates against its own user database
+   */
   login: async (email, password) => {
-    const data = await authAPI.signIn(email, password);
-    return { token: data.session?.access_token, user: data.user };
+    try {
+      console.log('Calling backend login endpoint for:', email);
+      const response = await api.post('/auth/login', { email, password });
+      console.log('Login response:', response);
+
+      // Response structure from backend: { access_token, user, ... }
+      if (!response || !response.access_token) {
+        throw new Error('Invalid login response - no access token');
+      }
+
+      return {
+        token: response.access_token,
+        user: response.user || { email },
+        session: response.session || response,
+      };
+    } catch (err) {
+      console.error('Login API error:', err);
+
+      // Provide clearer error messages
+      if (err.response?.status === 401) {
+        throw new Error('Invalid email or password. Please check your credentials and try again.');
+      }
+      if (err.response?.status === 404) {
+        throw new Error('User account not found. Please sign up first.');
+      }
+
+      const errorMsg = err.response?.data?.error || err.message || 'Login failed';
+      throw new Error(errorMsg);
+    }
   },
+
   getMe: () => api.get('/users/me'),
   getProfile: (userId) => api.get(`/users/${userId}`),
   updateProfile: (data) => api.put('/users/me', data),
@@ -105,6 +188,11 @@ export const skillAPI = {
   createSkill: (data) => api.post('/skills', data),
   updateSkill: (skillId, data) => api.put(`/skills/${skillId}`, data),
   deleteSkill: (skillId) => api.delete(`/skills/${skillId}`),
+
+  // Admin Endpoints
+  getPendingSkills: () => api.get('/skills/pending'),
+  approveSkill: (skillId) => api.put(`/skills/${skillId}/approve`),
+  rejectSkill: (skillId) => api.delete(`/skills/${skillId}/reject`),
 };
 
 // ===== CONNECTIONS API =====
@@ -128,6 +216,7 @@ export const creditAPI = {
 export const matchmakingAPI = {
   getMatches: (skillId, limit = 10) => api.get(`/matchmaking/for-skill/${skillId}`, { params: { limit } }),
   searchSkills: (query, limit = 30) => api.post('/matchmaking/search', { query, candidatesLimit: limit }),
+  findMatches: (skillConfig) => api.post('/matchmaking/find', { skillConfig }),
 };
 
 export default api;

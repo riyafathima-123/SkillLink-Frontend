@@ -8,6 +8,10 @@ export default function ConnectionModal({ skill, onConfirm, onClose }) {
   const [credits, setCredits] = useState(null);
   const [loadingBalance, setLoadingBalance] = useState(true);
 
+  // Get the skill price from different possible field names
+  const skillPrice = skill.credits_per_hour ?? skill.price ?? skill.credits ?? skill.cost ?? 0;
+  const skillTitle = skill.skill_name || skill.title || skill.name || 'Skill';
+
   useEffect(() => {
     fetchBalance();
   }, []);
@@ -23,11 +27,11 @@ export default function ConnectionModal({ skill, onConfirm, onClose }) {
     }
   };
 
-  const hasEnoughCredits = credits !== null && credits >= skill.price;
+  const hasEnoughCredits = credits !== null && credits >= skillPrice;
 
   const handleConfirm = async () => {
     if (!hasEnoughCredits) {
-      alert('Insufficient credits! You need ' + skill.price + ' credits but only have ' + credits);
+      alert('Insufficient credits! You need ' + skillPrice + ' credits but only have ' + credits);
       return;
     }
     
@@ -45,7 +49,7 @@ export default function ConnectionModal({ skill, onConfirm, onClose }) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">Connect</h2>
-            <p className="text-gray-600">{skill.title}</p>
+            <p className="text-gray-600">{skillTitle}</p>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
             <X className="w-5 h-5 text-gray-500" />
@@ -56,7 +60,7 @@ export default function ConnectionModal({ skill, onConfirm, onClose }) {
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm text-gray-700">
               Cost: <span className="font-bold text-blue-600 inline-flex items-center gap-1">
-                <Zap className="w-4 h-4" /> {skill.price} credits
+                <Zap className="w-4 h-4" /> {skillPrice} credits
               </span>
             </p>
             {!loadingBalance && (
@@ -69,7 +73,7 @@ export default function ConnectionModal({ skill, onConfirm, onClose }) {
             <div className="mt-2 flex items-start gap-2 bg-red-50 border border-red-200 rounded p-2">
               <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-red-700">
-                Insufficient credits! You need {skill.price - credits} more credits.
+                Insufficient credits! You need {skillPrice - credits} more credits.
               </p>
             </div>
           )}

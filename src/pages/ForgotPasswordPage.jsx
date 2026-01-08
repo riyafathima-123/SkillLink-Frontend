@@ -1,29 +1,26 @@
 import React, { useState } from 'react';
-import { BookOpen } from 'lucide-react';
-import { authAPI } from '../services/api';
-import { Link } from 'react-router-dom';
+import { BookOpen, AlertCircle, CheckCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
-  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-    setMessage(null);
-    try {
-      const redirectTo = process.env.REACT_APP_RESET_REDIRECT || window.location.origin + '/';
-      await authAPI.resetPassword(email, { redirectTo });
-      setMessage(' A password reset link has been sent to the provided email address.');
-    } catch (err) {
-      console.error('Reset failed', err);
-      setError(err.message || 'Failed to send reset email');
-    } finally {
-      setLoading(false);
+    
+    if (!email) {
+      return;
     }
+
+    // Since we can't send emails, just show a message
+    setMessage('Since email is not configured, please contact support to reset your password or use the "Change Password" option if you\'re already logged in.');
+    
+    // Optionally redirect to login after a delay
+    setTimeout(() => {
+      navigate('/login');
+    }, 5000);
   };
 
   return (
@@ -33,45 +30,46 @@ export default function ForgotPasswordPage() {
           <div className="flex justify-center mb-4">
             <BookOpen className="w-16 h-16 text-blue-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Reset your password</h1>
-          <p className="text-gray-600">Enter your email to receive a password reset link.</p>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Forgot Password?</h1>
+          <p className="text-gray-600 text-sm">We'll help you reset your password</p>
         </div>
 
         {message && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-green-700">{message}</p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex gap-3">
+            <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-blue-700">{message}</p>
           </div>
         )}
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
+        {!message && (
+          <>
+            <p className="text-gray-600 text-sm mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              ⚠️ Email system is not configured. Please use one of these options:
+            </p>
+
+            <div className="space-y-4">
+              <Link
+                to="/change-password"
+                className="block w-full bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg font-semibold text-center transition"
+              >
+                Change Password (if logged in)
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setEmail('contacted')}
+                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 p-3 rounded-lg font-semibold transition"
+              >
+                Contact Support
+              </button>
+            </div>
+          </>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full border rounded-lg p-3"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg font-semibold transition disabled:opacity-50"
-          >
-            {loading ? 'Sending...' : 'Send reset link'}
-          </button>
-        </form>
-
-        <div className="mt-4 text-center">
-          <Link to="/login" className="text-sm text-blue-600 hover:underline">Back to sign in</Link>
+        <div className="mt-6 text-center">
+          <Link to="/login" className="text-sm text-blue-600 hover:underline font-medium">
+            Back to Sign In
+          </Link>
         </div>
       </div>
     </div>

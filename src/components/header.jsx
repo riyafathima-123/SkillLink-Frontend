@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Zap, LogOut, Menu, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { creditAPI } from '../services/api';
 
 export default function Header({ user, onLogout }) {
@@ -42,10 +43,10 @@ export default function Header({ user, onLogout }) {
               <span className="text-sm text-yellow-600">credits</span>
             </div>
 
-            <div className="text-right border-r pr-6">
-              <p className="font-semibold text-gray-800">{user?.full_name}</p>
+            <Link to="/profile" className="text-right border-r pr-6 hover:bg-gray-50 p-2 rounded transition group">
+              <p className="font-semibold text-gray-800 group-hover:text-blue-600">{user?.full_name}</p>
               <p className="text-xs text-gray-500">{user?.email}</p>
-            </div>
+            </Link>
 
             <button
               onClick={onLogout}

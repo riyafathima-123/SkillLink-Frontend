@@ -1,110 +1,134 @@
 import React, { useState } from 'react';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, AlertCircle, CheckCircle } from 'lucide-react';
 import { authAPI } from '../services/api';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import '../styles/components.css';
 
-export default function SignUpPage({ onLogin }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [message, setMessage] = useState(null);
+export default function SignUpPage() {
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
+  const [full_name, setFullName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!email || !password || !full_name) {
+      setError('All fields are required');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    setMessage(null);
+
     try {
-      const data = await authAPI.signUp(email, password, name);
-      if (data.session?.access_token && data.user) {
-        onLogin(data.session.access_token, data.user);
-        navigate('/');
-      } else {
-        setMessage('Sign-up successful. Please check your email for confirmation, then sign in.');
-      }
+      const response = await authAPI.signUp(email, password, full_name);
+      console.log('Sign up successful:', response);
+      
+      setMessage('Account created successfully! Redirecting to login...');
+      
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (err) {
-      console.error('Sign-up failed', err);
-      setError(err.message || 'Sign-up failed');
+      console.error('Sign up failed:', err);
+      const errorMsg = err.message || 'Failed to create account';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-purple-600 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <BookOpen className="w-16 h-16 text-blue-600" />
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-logo">
+            <BookOpen />
           </div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2 font-brand">Create Account</h1>
-          <p className="text-gray-600">Sign up to share and learn skills.</p>
+          <h1 className="auth-title" style={{ fontSize: '1.875rem' }}>Create Account</h1>
+          <p className="auth-subtitle">Join SkillLink and start connecting</p>
         </div>
 
         {message && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-green-700">{message}</p>
+          <div className="success-box">
+            <CheckCircle className="success-icon" />
+            <p className="success-message">{message}</p>
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-red-700">
-              <strong>Error:</strong> {error}
-            </p>
+          <div className="error-box">
+            <AlertCircle className="error-icon" />
+            <p className="error-message">{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full name</label>
+        <form onSubmit={handleSubmit} className="form-space">
+          <div className="form-group">
+            <label className="form-label">Full Name</label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={full_name}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Full name"
               required
-              className="w-full border rounded-lg p-3"
+              disabled={loading}
+              className="form-input"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <div className="form-group">
+            <label className="form-label">Email Address</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
               required
-              className="w-full border rounded-lg p-3"
+              disabled={loading}
+              className="form-input"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <div className="form-group">
+            <label className="form-label">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
               required
-              className="w-full border rounded-lg p-3"
+              disabled={loading}
+              className="form-input"
             />
           </div>
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg font-semibold transition disabled:opacity-50"
+            disabled={loading || !email || !password || !full_name}
+            className="btn btn-primary"
           >
-            {loading ? 'Creating account...' : 'Create account'}
+            {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
         </form>
 
-        <div className="mt-4 text-center">
-          <Link to="/login" className="text-sm text-blue-600 hover:underline">
-            Already have an account? Sign in
-          </Link>
+        <div className="auth-footer">
+          <p className="auth-footer-text">
+            Already have an account?{' '}
+            <Link to="/login" className="auth-link">
+              Sign In
+            </Link>
+          </p>
         </div>
       </div>
     </div>

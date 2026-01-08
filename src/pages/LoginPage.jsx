@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, AlertCircle } from 'lucide-react';
 import { userAPI } from '../services/api';
 import { Link } from 'react-router-dom';
+import '../styles/components.css';
 
 export default function LoginPage({ onLogin }) {
   const [loading, setLoading] = useState(false);
@@ -14,86 +15,105 @@ export default function LoginPage({ onLogin }) {
     setLoading(true);
     setError(null);
 
+    if (!email || !password) {
+      setError('Please enter both email and password');
+      setLoading(false);
+      return;
+    }
+
     try {
+      console.log('Attempting login with email:', email);
       const response = await userAPI.login(email, password);
-      if (response.token && response.user) {
-        onLogin(response.token, response.user);
-      } else {
-        throw new Error('Invalid login response');
+      
+      if (!response || !response.token) {
+        setError('Login response is invalid. Please try again.');
+        setLoading(false);
+        return;
       }
+
+      onLogin(response.token, response.user);
     } catch (err) {
-      console.error('Login failed:', err);
-      setError(err.message || err.error || 'Login failed');
-    } finally {
+      console.error('Login error:', err);
+      const errorMessage = err.message || 'Login failed. Please try again.';
+      setError(errorMessage);
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-blue-500 to-purple-600 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <BookOpen className="w-16 h-16 text-blue-600" />
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-logo">
+            <BookOpen />
           </div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2 font-brand">SkillLink</h1>
-          <p className="text-gray-600">Learn & Share Skills Peer-to-Peer</p>
+          <h1 className="auth-title">SkillLink</h1>
+          <p className="auth-subtitle">Learn & Share Skills Peer-to-Peer</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-red-700">
-              <strong>Error:</strong> {error}
-            </p>
+          <div className="error-box">
+            <AlertCircle className="error-icon" />
+            <div className="error-content">
+              <p className="error-title">Login Error</p>
+              <p className="error-message">{error}</p>
+            </div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <form onSubmit={handleSubmit} className="form-space">
+          <div className="form-group">
+            <label className="form-label">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
               required
-              className="w-full border rounded-lg p-3"
+              disabled={loading}
+              className="form-input"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <div className="form-group">
+            <label className="form-label">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
               required
-              className="w-full border rounded-lg p-3"
+              disabled={loading}
+              className="form-input"
             />
           </div>
 
-          <div className="text-right">
-            <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+          <div className="form-actions">
+            <Link to="/forgot-password" className="auth-link">
               Forgot password?
             </Link>
           </div>
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 rounded-lg font-semibold transition disabled:opacity-50"
+            disabled={loading || !email || !password}
+            className="btn btn-primary"
           >
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
 
-        <div className="mt-4 text-center">
-          <Link to="/signup" className="text-sm text-blue-600 hover:underline">
-            Don't have an account? Create one
-          </Link>
+        <div className="auth-footer">
+          <p className="auth-footer-text">
+            Don't have an account?{' '}
+            <Link to="/signup" className="auth-link">
+              Create one
+            </Link>
+          </p>
         </div>
 
-        <div className="mt-6 pt-6 border-t text-center">
-          <p className="text-xs text-gray-500">Use your account to sign in.</p>
+        <div className="auth-divider">
+          <p className="auth-divider-text">Use your account to sign in.</p>
         </div>
       </div>
     </div>

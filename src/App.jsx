@@ -10,6 +10,12 @@ import MySkillsPage from './pages/MySkillsPage';
 import Header from './components/header';
 import Navigation from './components/Navigation';
 import { userAPI, authAPI } from './services/api';
+import ResetPasswordConfirmPage from './pages/ResetPasswordConfirmPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
+import AdminDashboard from './pages/AdminDashboard';
+import UserDashboard from './pages/UserDashboard';
+import ProfilePage from './pages/ProfilePage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -31,7 +37,9 @@ export default function App() {
       try {
         const userResp = await authAPI.getUser();
         if (userResp) {
-          setCurrentUser(userResp);
+          // fetch full profile to get role
+          const profile = await userAPI.getMe();
+          setCurrentUser(profile || userResp);
           setIsLoggedIn(true);
           return;
         }
@@ -58,7 +66,6 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    // sign out from Supabase as well
     try {
       authAPI.signOut();
     } catch (e) {
@@ -80,35 +87,89 @@ export default function App() {
     );
   }
 
-  if (!isLoggedIn) {
-    return (
-      <Router>
-        <Routes>
-          <Route path="/signup" element={<SignUpPage onLogin={handleLogin} />} />
-          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/verify-email" element={<VerifyEmailPage />} />
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
-      </Router>
-    );
-  }
-
   return (
-    <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Header user={currentUser} onLogout={handleLogout} />
-        <Navigation />
-        
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <Routes>
-            <Route path="/" element={<SkillsPage />} />
-            <Route path="/connections" element={<ConnectionsPage />} />
-            <Route path="/my-skills" element={<MySkillsPage />} />
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </div>
-      </div>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/signup" element={!isLoggedIn ? <SignUpPage onLogin={handleLogin} /> : <Navigate to="/" />} />
+        <Route path="/login" element={!isLoggedIn ? <LoginPage onLogin={handleLogin} /> : <Navigate to="/" />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/auth/reset-password-confirm" element={<ResetPasswordConfirmPage />} />
+        <Route path="/auth/change-password" element={<ChangePasswordPage />} />
+
+        {/* Protected Routes */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute user={currentUser} allowedRoles={['admin']}>
+              <AdminDashboard onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute user={currentUser} allowedRoles={['user', 'admin']}>
+              <UserDashboard onLogout={handleLogout} />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Re-route root based on role if logged in, otherwise public home or login */}
+        <Route
+          path="/"
+          element={
+            isLoggedIn ? (
+              currentUser?.role === 'admin' ? (
+                <Navigate to="/admin/dashboard" />
+              ) : (
+                <Navigate to="/dashboard" />
+              )
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+
+        {/* Specific protected pages (render mostly for users) */}
+        <Route
+          path="/skills"
+          element={
+            <ProtectedRoute user={currentUser}>
+              <div className="min-h-screen bg-gray-50"><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div className="max-w-7xl mx-auto px-4 py-8"><SkillsPage /></div></div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/connections"
+          element={
+            <ProtectedRoute user={currentUser}>
+              <div className="min-h-screen bg-gray-50"><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div className="max-w-7xl mx-auto px-4 py-8"><ConnectionsPage /></div></div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute user={currentUser}>
+              <div className="bg-gray-50"><Header user={currentUser} onLogout={handleLogout} /><Navigation /><ProfilePage /></div>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/my-skills"
+          element={
+            <ProtectedRoute user={currentUser}>
+              <div className="min-h-screen bg-gray-50"><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div className="max-w-7xl mx-auto px-4 py-8"><MySkillsPage /></div></div>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
     </Router>
   );
 }

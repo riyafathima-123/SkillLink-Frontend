@@ -193,6 +193,17 @@ export const skillAPI = {
   getPendingSkills: () => api.get('/skills/pending'),
   approveSkill: (skillId) => api.put(`/skills/${skillId}/approve`),
   rejectSkill: (skillId) => api.delete(`/skills/${skillId}/reject`),
+  listAllSkills: () => api.get('/skills/admin/list'),
+};
+
+// ===== ADMIN API =====
+export const adminAPI = {
+  listUsers: () => api.get('/users/admin/list'),
+  listTeachingRequests: () => api.get('/users/admin/teaching-requests'),
+  updateTeachingStatus: (userId, status) => api.put(`/users/admin/${userId}/teaching-status`, { status }),
+  listAllTransactions: () => api.get('/credits/admin/transactions'),
+  listAllConnections: () => api.get('/connections/admin/list'),
+  validateConnection: (connectionId) => api.put(`/connections/admin/${connectionId}/validate`),
 };
 
 // ===== CONNECTIONS API =====
@@ -217,6 +228,13 @@ export const matchmakingAPI = {
   getMatches: (skillId, limit = 10) => api.get(`/matchmaking/for-skill/${skillId}`, { params: { limit } }),
   searchSkills: (query, limit = 30) => api.post('/matchmaking/search', { query, candidatesLimit: limit }),
   findMatches: (skillConfig) => api.post('/matchmaking/find', { skillConfig }),
+};
+
+// ===== MESSAGES API =====
+export const messageAPI = {
+  sendMessage: (recipientId, text) => api.post('/messages', { recipient_id: recipientId, text }),
+  getConversations: () => api.get('/messages/conversations'),
+  getMessages: (conversationId) => api.get(`/messages/${conversationId}`),
 };
 
 export default api;

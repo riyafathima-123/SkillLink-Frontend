@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Zap, Plus } from 'lucide-react';
+import { Search, Zap, Plus, MessageSquare } from 'lucide-react';
 
 export default function Navigation() {
   const location = useLocation();
@@ -8,6 +8,7 @@ export default function Navigation() {
   const tabs = [
     { path: '/', label: 'Find Skills', icon: <Search className="w-4 h-4" /> },
     { path: '/connections', label: 'My Connections', icon: <Zap className="w-4 h-4" /> },
+    { path: '/messages', label: 'Messages', icon: <MessageSquare className="w-4 h-4" /> },
   ];
 
   return (
@@ -19,8 +20,8 @@ export default function Navigation() {
               key={tab.path}
               to={tab.path}
               className={`px-4 py-4 font-semibold transition border-b-2 flex items-center gap-2 whitespace-nowrap ${location.pathname === tab.path
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-600 hover:text-blue-600'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-blue-600'
                 }`}
             >
               {tab.icon}

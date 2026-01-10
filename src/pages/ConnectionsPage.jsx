@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Zap, Loader, Check, X, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Zap, Loader, Check, X, Clock, MessageSquare } from 'lucide-react';
 import { connectionAPI, userAPI, skillAPI, creditAPI } from '../services/api';
 
 export default function ConnectionsPage() {
+  const navigate = useNavigate();
   const [connections, setConnections] = useState([]);
   const [users, setUsers] = useState({});
   const [skills, setSkills] = useState({});
@@ -44,17 +46,17 @@ export default function ConnectionsPage() {
         if (!usersMap[conn.learner_id]) {
           try {
             usersMap[conn.learner_id] = await userAPI.getProfile(conn.learner_id);
-          } catch (err) {}
+          } catch (err) { }
         }
         if (!usersMap[conn.teacher_id]) {
           try {
             usersMap[conn.teacher_id] = await userAPI.getProfile(conn.teacher_id);
-          } catch (err) {}
+          } catch (err) { }
         }
         if (!skillsMap[conn.skill_id]) {
           try {
             skillsMap[conn.skill_id] = await skillAPI.getSkill(conn.skill_id);
-          } catch (err) {}
+          } catch (err) { }
         }
       }
 
@@ -75,11 +77,11 @@ export default function ConnectionsPage() {
 
     try {
       console.log('🔍 Accepting connection:', { connectionId, price });
-      
+
       // Update connection status to accepted
       // The backend should automatically handle credit transfer
       await connectionAPI.updateConnection(connectionId, { status: 'accepted' });
-      
+
       alert(`✓ Connection accepted! ${price} credits have been transferred.`);
       fetchData();
     } catch (err) {
@@ -158,11 +160,10 @@ export default function ConnectionsPage() {
       <div className="flex gap-4 mb-6">
         <button
           onClick={() => setActiveTab('incoming')}
-          className={`flex-1 py-3 px-6 rounded-lg font-semibold transition ${
-            activeTab === 'incoming'
+          className={`flex-1 py-3 px-6 rounded-lg font-semibold transition ${activeTab === 'incoming'
               ? 'bg-blue-600 text-white shadow-md'
               : 'bg-white text-gray-600 hover:bg-gray-100'
-          }`}
+            }`}
         >
           📥 Incoming Requests
           {incomingRequests.length > 0 && (
@@ -173,11 +174,10 @@ export default function ConnectionsPage() {
         </button>
         <button
           onClick={() => setActiveTab('outgoing')}
-          className={`flex-1 py-3 px-6 rounded-lg font-semibold transition ${
-            activeTab === 'outgoing'
+          className={`flex-1 py-3 px-6 rounded-lg font-semibold transition ${activeTab === 'outgoing'
               ? 'bg-blue-600 text-white shadow-md'
               : 'bg-white text-gray-600 hover:bg-gray-100'
-          }`}
+            }`}
         >
           📤 My Requests
           {outgoingRequests.length > 0 && (
@@ -284,6 +284,13 @@ export default function ConnectionsPage() {
                       <p className="text-sm font-medium text-green-700">
                         ✓ Connection accepted - Schedule your session!
                       </p>
+                      <button
+                        onClick={() => navigate(`/messages?userId=${isMyRequest ? teacher?.id : learner?.id}`)}
+                        className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-semibold transition flex items-center justify-center gap-2"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        Message
+                      </button>
                     </div>
                   )}
                 </div>

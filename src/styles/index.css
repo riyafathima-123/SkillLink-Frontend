@@ -1,6 +1,40 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
+/* ===== DESIGN TOKENS ===== */
+:root {
+  --primary:        #6366f1;
+  --primary-dark:   #4f46e5;
+  --primary-light:  #e0e7ff;
+  --accent-purple:  #a78bfa;
+  --accent-teal:    #2dd4bf;
+  --accent-rose:    #fb7185;
+  --accent-amber:   #fbbf24;
+  --accent-sky:     #38bdf8;
+
+  --surface:        #ffffff;
+  --surface-2:      #f8f9ff;
+  --bg:             #eef0fb;
+
+  --text-primary:   #1e1b4b;
+  --text-secondary: #64748b;
+  --text-muted:     #94a3b8;
+
+  --border:         #e2e8f0;
+  --border-soft:    rgba(99,102,241,0.12);
+
+  --radius-sm:      0.5rem;
+  --radius-md:      0.875rem;
+  --radius-lg:      1.25rem;
+  --radius-xl:      1.75rem;
+  --radius-full:    9999px;
+
+  --shadow-sm:      0 1px 4px rgba(99,102,241,0.06);
+  --shadow-md:      0 4px 20px rgba(99,102,241,0.10);
+  --shadow-lg:      0 8px 40px rgba(99,102,241,0.14);
+  --shadow-hover:   0 12px 48px rgba(99,102,241,0.18);
+}
+
+/* ===== RESET ===== */
 * {
   margin: 0;
   padding: 0;
@@ -13,49 +47,58 @@ html {
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #f9fafb;
-  color: #1f2937;
+  background-color: var(--bg);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Brand font for the product name */
+/* ===== BRAND FONT ===== */
 .font-brand {
-  font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
-  font-weight: 600;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-weight: 800;
   letter-spacing: -0.5px;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--surface-2); }
+::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Animation */
+/* ===== ANIMATIONS ===== */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-in-out;
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in  { animation: fadeIn  0.35s ease both; }
+.animate-slide-up { animation: slideUp 0.4s ease both; }
+.animate-spin     { animation: spin 0.8s linear infinite; }
+
+/* ===== UTILITY: GLASS CARD ===== */
+.glass {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.6);
 }

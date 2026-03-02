@@ -1,7 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, Loader, Check, X, Clock, MessageSquare } from 'lucide-react';
+import { Zap, Loader, Check, X, Clock, MessageSquare, Inbox, Send } from 'lucide-react';
 import { connectionAPI, userAPI, skillAPI, creditAPI } from '../services/api';
+
+const STATUS_STYLES = {
+  pending: { bg: '#fef3c7', color: '#b45309', border: '#fde68a', bar: '#f59e0b' },
+  accepted: { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7', bar: '#10b981' },
+  rejected: { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5', bar: '#ef4444' },
+  completed: { bg: '#e0e7ff', color: '#3730a3', border: '#a5b4fc', bar: '#6366f1' },
+};
+
+function StatusBadge({ status }) {
+  const s = STATUS_STYLES[status] || STATUS_STYLES.pending;
+  const icons = {
+    pending: <Clock size={12} />, accepted: <Check size={12} />,
+    rejected: <X size={12} />, completed: <Check size={12} />,
+  };
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+      background: s.bg, color: s.color,
+      border: `1.5px solid ${s.border}`,
+      padding: '0.25rem 0.75rem', borderRadius: '9999px',
+      fontSize: '0.75rem', fontWeight: 700,
+    }}>
+      {icons[status]}
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  );
+}
 
 export default function ConnectionsPage() {
   const navigate = useNavigate();
@@ -10,11 +37,9 @@ export default function ConnectionsPage() {
   const [skills, setSkills] = useState({});
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('incoming'); // 'incoming' or 'outgoing'
+  const [activeTab, setActiveTab] = useState('incoming');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     try {
@@ -22,44 +47,24 @@ export default function ConnectionsPage() {
         connectionAPI.listConnections(),
         userAPI.getMe(),
       ]);
-
-      console.log('🔍 Connections Page - Current User:', currentUserData);
-      console.log('🔍 Connections Page - All Connections:', connectionsData);
-
-      // Filter connections to show only those involving current user
       const myConnections = (connectionsData || []).filter(
-        (conn) =>
-          conn.learner_id === currentUserData?.id ||
-          conn.teacher_id === currentUserData?.id
+        conn => conn.learner_id === currentUserData?.id || conn.teacher_id === currentUserData?.id
       );
-
-      console.log('🔍 Connections Page - My Connections:', myConnections);
-
       setConnections(myConnections);
       setCurrentUser(currentUserData);
 
-      // Fetch related data
-      const usersMap = {};
-      const skillsMap = {};
-
+      const usersMap = {}, skillsMap = {};
       for (const conn of connectionsData) {
         if (!usersMap[conn.learner_id]) {
-          try {
-            usersMap[conn.learner_id] = await userAPI.getProfile(conn.learner_id);
-          } catch (err) { }
+          try { usersMap[conn.learner_id] = await userAPI.getProfile(conn.learner_id); } catch { }
         }
         if (!usersMap[conn.teacher_id]) {
-          try {
-            usersMap[conn.teacher_id] = await userAPI.getProfile(conn.teacher_id);
-          } catch (err) { }
+          try { usersMap[conn.teacher_id] = await userAPI.getProfile(conn.teacher_id); } catch { }
         }
         if (!skillsMap[conn.skill_id]) {
-          try {
-            skillsMap[conn.skill_id] = await skillAPI.getSkill(conn.skill_id);
-          } catch (err) { }
+          try { skillsMap[conn.skill_id] = await skillAPI.getSkill(conn.skill_id); } catch { }
         }
       }
-
       setUsers(usersMap);
       setSkills(skillsMap);
     } catch (err) {
@@ -70,22 +75,12 @@ export default function ConnectionsPage() {
   };
 
   const handleAccept = async (connectionId, price) => {
-    // Confirm before accepting
-    if (!window.confirm(`Accept this connection request? The learner will be charged ${price} credits.`)) {
-      return;
-    }
-
+    if (!window.confirm(`Accept this connection request? The learner will be charged ${price} credits.`)) return;
     try {
-      console.log('🔍 Accepting connection:', { connectionId, price });
-
-      // Update connection status to accepted
-      // The backend should automatically handle credit transfer
       await connectionAPI.updateConnection(connectionId, { status: 'accepted' });
-
       alert(`✓ Connection accepted! ${price} credits have been transferred.`);
       fetchData();
     } catch (err) {
-      console.error('❌ Failed to accept connection:', err);
       alert('Error: ' + (err.response?.data?.error || err.message));
     }
   };
@@ -95,210 +90,250 @@ export default function ConnectionsPage() {
       await connectionAPI.updateConnection(connectionId, { status: 'rejected' });
       alert('✓ Connection rejected');
       fetchData();
-    } catch (err) {
-      alert('Error: ' + (err.response?.data?.error || err.message));
-    }
+    } catch (err) { alert('Error: ' + (err.response?.data?.error || err.message)); }
   };
 
   const handleCancel = async (connectionId) => {
-    if (!window.confirm('Are you sure you want to cancel this connection request?'))
-      return;
-
+    if (!window.confirm('Are you sure you want to cancel this connection request?')) return;
     try {
       await connectionAPI.cancelConnection(connectionId);
       alert('✓ Connection cancelled');
       fetchData();
-    } catch (err) {
-      alert('Error: ' + (err.response?.data?.error || err.message));
-    }
+    } catch (err) { alert('Error: ' + (err.response?.data?.error || err.message)); }
+  };
+
+  const handleComplete = async (connectionId) => {
+    if (!window.confirm('Mark this session as complete? This will notify the admin for approval and credit transfer.')) return;
+    try {
+      await connectionAPI.submitCompletion(connectionId);
+      alert('✓ Session marked complete - pending admin approval for credit transfer');
+      fetchData();
+    } catch (err) { alert('Error: ' + (err.response?.data?.error || err.message)); }
   };
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <Loader className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-        <p className="text-gray-600">Loading connections...</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '5rem 0' }}>
+        <div style={{
+          width: '48px', height: '48px', borderRadius: '50%',
+          border: '4px solid #e0e7ff', borderTopColor: '#6366f1',
+          animation: 'spin 0.8s linear infinite', marginBottom: '1rem',
+        }} />
+        <p style={{ color: '#64748b', fontWeight: 500 }}>Loading connections...</p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
-  const getStatusColor = (status) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-700',
-      accepted: 'bg-green-100 text-green-700',
-      rejected: 'bg-red-100 text-red-700',
-      completed: 'bg-blue-100 text-blue-700',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-700';
+  const incomingRequests = connections.filter(c => c.teacher_id === currentUser?.id);
+  const outgoingRequests = connections.filter(c => c.learner_id === currentUser?.id);
+  const pendingIncoming = incomingRequests.filter(c => c.status === 'pending').length;
+  const displayed = activeTab === 'incoming' ? incomingRequests : outgoingRequests;
+
+  const tabBtn = (id, label, Icon, badge) => {
+    const active = activeTab === id;
+    return (
+      <button onClick={() => setActiveTab(id)} style={{
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+        padding: '0.75rem 1.25rem', borderRadius: '0.875rem', border: 'none', cursor: 'pointer',
+        fontWeight: 700, fontSize: '0.875rem', fontFamily: 'inherit',
+        transition: 'all 0.2s',
+        background: active ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : '#f1f5f9',
+        color: active ? '#fff' : '#64748b',
+        boxShadow: active ? '0 4px 16px rgba(99,102,241,0.28)' : 'none',
+      }}>
+        <Icon size={15} />
+        {label}
+        {badge > 0 && (
+          <span style={{
+            background: active ? 'rgba(255,255,255,0.3)' : '#ef4444',
+            color: '#fff', fontSize: '0.7rem', fontWeight: 700,
+            padding: '0.1rem 0.45rem', borderRadius: '9999px', minWidth: '18px', textAlign: 'center',
+          }}>{badge}</span>
+        )}
+      </button>
+    );
   };
-
-  const getStatusIcon = (status) => {
-    const icons = {
-      pending: <Clock className="w-4 h-4" />,
-      accepted: <Check className="w-4 h-4" />,
-      rejected: <X className="w-4 h-4" />,
-      completed: <Check className="w-4 h-4" />,
-    };
-    return icons[status];
-  };
-
-  // Separate incoming and outgoing requests
-  const incomingRequests = connections.filter(
-    (conn) => conn.teacher_id === currentUser?.id
-  );
-  const outgoingRequests = connections.filter(
-    (conn) => conn.learner_id === currentUser?.id
-  );
-
-  const displayedConnections = activeTab === 'incoming' ? incomingRequests : outgoingRequests;
 
   return (
-    <div>
-      <h2 className="text-3xl font-bold text-gray-800 mb-6">My Connections</h2>
-
-      {/* Tabs */}
-      <div className="flex gap-4 mb-6">
-        <button
-          onClick={() => setActiveTab('incoming')}
-          className={`flex-1 py-3 px-6 rounded-lg font-semibold transition ${activeTab === 'incoming'
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'bg-white text-gray-600 hover:bg-gray-100'
-            }`}
-        >
-          📥 Incoming Requests
-          {incomingRequests.length > 0 && (
-            <span className="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-              {incomingRequests.filter((c) => c.status === 'pending').length}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('outgoing')}
-          className={`flex-1 py-3 px-6 rounded-lg font-semibold transition ${activeTab === 'outgoing'
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'bg-white text-gray-600 hover:bg-gray-100'
-            }`}
-        >
-          📤 My Requests
-          {outgoingRequests.length > 0 && (
-            <span className="ml-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-              {outgoingRequests.length}
-            </span>
-          )}
-        </button>
+    <div style={{ animation: 'fadeIn 0.35s ease both' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h2 style={{
+          fontFamily: "'Plus Jakarta Sans', Inter, sans-serif",
+          fontWeight: 800, fontSize: '1.625rem', color: '#1e1b4b', marginBottom: '0.25rem',
+        }}>
+          Connection Requests
+        </h2>
+        <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Manage your incoming and outgoing learning requests</p>
       </div>
 
-      {displayedConnections.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-lg">
-          <Zap className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500 text-lg">
-            {activeTab === 'incoming'
-              ? 'No incoming requests'
-              : 'No outgoing requests'}
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', background: '#f1f5f9', padding: '0.375rem', borderRadius: '1rem' }}>
+        {tabBtn('incoming', 'Incoming Requests', Inbox, pendingIncoming)}
+        {tabBtn('outgoing', 'My Requests', Send, outgoingRequests.length)}
+      </div>
+
+      {/* Empty State */}
+      {displayed.length === 0 ? (
+        <div style={{
+          background: '#fff', borderRadius: '1.5rem', padding: '4rem 2rem',
+          textAlign: 'center', border: '1.5px solid rgba(99,102,241,0.07)',
+          boxShadow: '0 2px 16px rgba(99,102,241,0.06)',
+        }}>
+          <div style={{
+            width: '64px', height: '64px', borderRadius: '50%',
+            background: 'linear-gradient(135deg, #e0e7ff, #ede9fe)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 1rem',
+          }}>
+            <Zap size={28} color="#8b5cf6" />
+          </div>
+          <p style={{ color: '#64748b', fontWeight: 600, fontSize: '1rem', marginBottom: '0.375rem' }}>
+            {activeTab === 'incoming' ? 'No incoming requests' : 'No outgoing requests'}
           </p>
-          <p className="text-gray-400">
+          <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
             {activeTab === 'incoming'
               ? 'When someone requests your skills, they will appear here'
               : 'Start by finding skills to learn!'}
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {displayedConnections.map((conn) => {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {displayed.map((conn, i) => {
             const learner = users[conn.learner_id];
             const teacher = users[conn.teacher_id];
             const skill = skills[conn.skill_id];
             const isMyRequest = conn.learner_id === currentUser?.id;
             const isTeacher = conn.teacher_id === currentUser?.id;
+            const s = STATUS_STYLES[conn.status] || STATUS_STYLES.pending;
 
             return (
-              <div
-                key={conn.id}
-                className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all border-l-4 border-purple-500 p-6"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-800 mb-1">
-                      {skill?.title || 'Loading...'}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-3">
-                      {isMyRequest
-                        ? `Requested to ${teacher?.full_name || 'Unknown'}`
-                        : `Request from ${learner?.full_name || 'Unknown'}`}
-                    </p>
+              <div key={conn.id} style={{
+                background: '#fff', borderRadius: '1.25rem',
+                boxShadow: '0 2px 16px rgba(99,102,241,0.08)',
+                border: '1.5px solid rgba(99,102,241,0.07)',
+                overflow: 'hidden',
+                animation: `slideUp 0.35s ease ${i * 0.05}s both`,
+              }}>
+                {/* Status bar */}
+                <div style={{ height: '4px', background: s.bar }} />
 
-                    {conn.message && (
-                      <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded mb-3">
-                        💬 "{conn.message}"
+                <div style={{ padding: '1.25rem 1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.875rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{
+                        fontFamily: "'Plus Jakarta Sans', Inter, sans-serif",
+                        fontWeight: 700, fontSize: '1rem', color: '#1e1b4b', marginBottom: '0.25rem',
+                      }}>
+                        {skill?.title || skill?.skill_name || 'Loading...'}
+                      </h3>
+                      <p style={{ fontSize: '0.8125rem', color: '#64748b', marginBottom: '0.625rem' }}>
+                        {isMyRequest
+                          ? `Requested to teach: ${teacher?.full_name || 'Unknown'}`
+                          : `Request from: ${learner?.full_name || 'Unknown'}`}
                       </p>
-                    )}
-
-                    <div className="flex gap-3 items-center flex-wrap">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${getStatusColor(
-                          conn.status
-                        )}`}
-                      >
-                        {getStatusIcon(conn.status)}
-                        {conn.status.charAt(0).toUpperCase() + conn.status.slice(1)}
-                      </span>
-                      <span className="text-lg font-bold text-blue-600 flex items-center gap-1">
-                        <Zap className="w-4 h-4" /> {conn.price} credits
-                      </span>
+                      {conn.message && (
+                        <p style={{
+                          fontSize: '0.8125rem', color: '#475569',
+                          background: '#f8f9ff', padding: '0.5rem 0.75rem',
+                          borderRadius: '0.625rem', border: '1px solid #e0e7ff',
+                          marginBottom: '0.625rem',
+                        }}>
+                          💬 "{conn.message}"
+                        </p>
+                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', flexWrap: 'wrap' }}>
+                        <StatusBadge status={conn.status} />
+                        <span style={{
+                          display: 'flex', alignItems: 'center', gap: '0.25rem',
+                          fontWeight: 700, color: '#6366f1', fontSize: '0.9rem',
+                        }}>
+                          <Zap size={14} fill="#6366f1" color="#6366f1" /> {conn.price} credits
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="pt-4 border-t">
-                  {isTeacher && conn.status === 'pending' && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleAccept(conn.id, conn.price)}
-                        className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-semibold transition flex items-center justify-center gap-2"
-                      >
-                        <Check className="w-4 h-4" />
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => handleReject(conn.id)}
-                        className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg font-semibold transition flex items-center justify-center gap-2"
-                      >
-                        <X className="w-4 h-4" />
-                        Reject
-                      </button>
-                    </div>
-                  )}
+                  {/* Actions */}
+                  <div style={{ borderTop: '1.5px solid #f1f5f9', paddingTop: '0.875rem' }}>
+                    {isTeacher && conn.status === 'pending' && (
+                      <div style={{ display: 'flex', gap: '0.625rem' }}>
+                        <button onClick={() => handleAccept(conn.id, conn.price)} style={{
+                          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem',
+                          background: 'linear-gradient(135deg, #10b981, #059669)',
+                          color: '#fff', border: 'none', borderRadius: '0.75rem',
+                          padding: '0.625rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer',
+                          boxShadow: '0 4px 12px rgba(16,185,129,0.25)', fontFamily: 'inherit',
+                        }}>
+                          <Check size={15} /> Accept
+                        </button>
+                        <button onClick={() => handleReject(conn.id)} style={{
+                          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem',
+                          background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                          color: '#fff', border: 'none', borderRadius: '0.75rem',
+                          padding: '0.625rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer',
+                          boxShadow: '0 4px 12px rgba(239,68,68,0.25)', fontFamily: 'inherit',
+                        }}>
+                          <X size={15} /> Reject
+                        </button>
+                      </div>
+                    )}
 
-                  {isMyRequest && conn.status === 'pending' && (
-                    <button
-                      onClick={() => handleCancel(conn.id)}
-                      className="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded-lg font-semibold transition"
-                    >
-                      Cancel Request
-                    </button>
-                  )}
-
-                  {conn.status === 'accepted' && (
-                    <div className="text-center">
-                      <p className="text-sm font-medium text-green-700">
-                        ✓ Connection accepted - Schedule your session!
-                      </p>
-                      <button
-                        onClick={() => navigate(`/messages?userId=${isMyRequest ? teacher?.id : learner?.id}`)}
-                        className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-semibold transition flex items-center justify-center gap-2"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                        Message
+                    {isMyRequest && conn.status === 'pending' && (
+                      <button onClick={() => handleCancel(conn.id)} style={{
+                        width: '100%', background: '#f1f5f9', color: '#64748b',
+                        border: 'none', borderRadius: '0.75rem', padding: '0.625rem',
+                        fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer', fontFamily: 'inherit',
+                      }}>
+                        Cancel Request
                       </button>
-                    </div>
-                  )}
+                    )}
+
+                    {conn.status === 'accepted' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                        <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#059669', textAlign: 'center' }}>
+                          ✓ {conn.learner_completed ? 'Awaiting admin approval' : 'Connection accepted — schedule your session!'}
+                        </p>
+                        <div style={{ display: 'flex', gap: '0.625rem' }}>
+                          <button
+                            onClick={() => navigate(`/messages?userId=${isMyRequest ? teacher?.id : learner?.id}`)}
+                            style={{
+                              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem',
+                              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                              color: '#fff', border: 'none', borderRadius: '0.75rem',
+                              padding: '0.625rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer',
+                              boxShadow: '0 4px 12px rgba(99,102,241,0.28)', fontFamily: 'inherit',
+                            }}>
+                            <MessageSquare size={15} /> Message
+                          </button>
+                          {isMyRequest && !conn.learner_completed && (
+                            <button onClick={() => handleComplete(conn.id)} style={{
+                              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem',
+                              background: 'linear-gradient(135deg, #10b981, #059669)',
+                              color: '#fff', border: 'none', borderRadius: '0.75rem',
+                              padding: '0.625rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer',
+                              boxShadow: '0 4px 12px rgba(16,185,129,0.25)', fontFamily: 'inherit',
+                            }}>
+                              <Check size={15} /> Mark Complete
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <style>{`
+        @keyframes slideUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes spin    { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }

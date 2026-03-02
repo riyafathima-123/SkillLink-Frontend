@@ -7,6 +7,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import SkillsPage from './pages/skillsPage';
 import ConnectionsPage from './pages/ConnectionsPage';
 import MySkillsPage from './pages/MySkillsPage';
+import LearningHistoryPage from './pages/LearningHistoryPage';
 import Header from './components/header';
 import Navigation from './components/Navigation';
 import { userAPI, authAPI } from './services/api';
@@ -79,10 +80,15 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading SkillLink...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#eef0fb' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '56px', height: '56px', borderRadius: '50%',
+            border: '4px solid #e0e7ff', borderTopColor: '#6366f1',
+            animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem',
+          }} />
+          <p style={{ color: '#64748b', fontWeight: 600, fontFamily: 'Inter, sans-serif' }}>Loading SkillLink...</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
     );
@@ -139,7 +145,7 @@ export default function App() {
           path="/skills"
           element={
             <ProtectedRoute user={currentUser}>
-              <div className="min-h-screen bg-gray-50"><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div className="max-w-7xl mx-auto px-4 py-8"><SkillsPage /></div></div>
+              <div style={{ minHeight: '100vh', background: 'var(--bg, #eef0fb)' }}><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.25rem' }}><SkillsPage /></div></div>
             </ProtectedRoute>
           }
         />
@@ -147,7 +153,7 @@ export default function App() {
           path="/connections"
           element={
             <ProtectedRoute user={currentUser}>
-              <div className="min-h-screen bg-gray-50"><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div className="max-w-7xl mx-auto px-4 py-8"><ConnectionsPage /></div></div>
+              <div style={{ minHeight: '100vh', background: 'var(--bg, #eef0fb)' }}><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.25rem' }}><ConnectionsPage /></div></div>
             </ProtectedRoute>
           }
         />
@@ -155,7 +161,7 @@ export default function App() {
           path="/profile"
           element={
             <ProtectedRoute user={currentUser}>
-              <div className="bg-gray-50"><Header user={currentUser} onLogout={handleLogout} /><Navigation /><ProfilePage /></div>
+              <div style={{ minHeight: '100vh', background: 'var(--bg, #eef0fb)' }}><Header user={currentUser} onLogout={handleLogout} /><Navigation /><ProfilePage /></div>
             </ProtectedRoute>
           }
         />
@@ -164,7 +170,16 @@ export default function App() {
           path="/my-skills"
           element={
             <ProtectedRoute user={currentUser}>
-              <div className="min-h-screen bg-gray-50"><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div className="max-w-7xl mx-auto px-4 py-8"><MySkillsPage /></div></div>
+              <div style={{ minHeight: '100vh', background: 'var(--bg, #eef0fb)' }}><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.25rem' }}><LearningHistoryPage /></div></div>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile-skills"
+          element={
+            <ProtectedRoute user={currentUser}>
+              <div style={{ minHeight: '100vh', background: 'var(--bg, #eef0fb)' }}><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.25rem' }}><MySkillsPage /></div></div>
             </ProtectedRoute>
           }
         />

@@ -1,34 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Loader, Filter, Globe, Clock, Star } from 'lucide-react';
+import { Search, Loader, Globe, Clock, Star, Sparkles } from 'lucide-react';
 import SkillCard from '../components/SkillCard';
 import ConnectionModal from '../components/ConnectionModal';
 import { skillAPI, userAPI, connectionAPI, matchmakingAPI } from '../services/api';
-// Assuming we add matchmaking to api service
 
 export default function SkillsPage() {
   const [skills, setSkills] = useState([]);
   const [owners, setOwners] = useState({});
   const [currentUser, setCurrentUser] = useState(null);
-
-  // Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [languageFilter, setLanguageFilter] = useState('');
   const [availabilityFilter, setAvailabilityFilter] = useState('');
-
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [connecting, setConnecting] = useState(false);
 
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
+  useEffect(() => { fetchInitialData(); }, []);
 
   const fetchInitialData = async () => {
     try {
       const user = await userAPI.getMe();
       setCurrentUser(user);
-      // Load default list (latest skills)
       const allSkills = await skillAPI.listSkills();
       setSkills(allSkills);
       fetchOwners(allSkills);
@@ -42,10 +35,8 @@ export default function SkillsPage() {
   const fetchOwners = async (skillsList) => {
     const ownersMap = { ...owners };
     for (const skill of skillsList) {
-      // Handle flattened structure from Matchmaking API vs Standard API
-      const ownerData = skill.users /* matchmaking join */ || skill.owner /* embedded */ || null;
+      const ownerData = skill.users || skill.owner || null;
       const ownerId = skill.user_id || skill.owner_id;
-
       if (ownerData) {
         ownersMap[ownerId] = ownerData;
       } else if (ownerId && !ownersMap[ownerId]) {
@@ -61,44 +52,33 @@ export default function SkillsPage() {
   const handleSearch = async (e) => {
     e.preventDefault();
     setSearching(true);
-
     try {
       if (!searchQuery.trim()) {
-        // Reset to default list if empty
         const all = await skillAPI.listSkills();
         setSkills(all);
         fetchOwners(all);
         setSearching(false);
         return;
       }
-
-      // Call Matchmaking API
       const res = await matchmakingAPI.findMatches({
         title: searchQuery,
         language: languageFilter,
-        availability: availabilityFilter
+        availability: availabilityFilter,
       });
-
       const matches = res.matches || [];
       setSkills(matches);
       fetchOwners(matches);
-
     } catch (err) {
-      console.error("Search failed:", err);
-      alert("Search failed. Please try again.");
+      console.error('Search failed:', err);
+      alert('Search failed. Please try again.');
     } finally {
       setSearching(false);
     }
   };
 
-  // Connection Handlers
   const handleConnect = (skill) => {
-    // Determine owner ID safely
     const ownerId = skill.user_id || skill.owner_id;
-    if (ownerId === currentUser?.id) {
-      alert('You cannot connect to your own skill');
-      return;
-    }
+    if (ownerId === currentUser?.id) { alert('You cannot connect to your own skill'); return; }
     setSelectedSkill(skill);
   };
 
@@ -117,94 +97,179 @@ export default function SkillsPage() {
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <Loader className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-        <p className="text-gray-600">Loading skills...</p>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5rem 0' }}>
+        <div style={{
+          width: '52px', height: '52px', borderRadius: '50%',
+          border: '4px solid #e0e7ff', borderTopColor: '#6366f1',
+          animation: 'spin 0.8s linear infinite', marginBottom: '1rem',
+        }} />
+        <p style={{ color: '#64748b', fontWeight: 500 }}>Loading skills...</p>
       </div>
     );
   }
 
+  const inputStyle = {
+    width: '100%',
+    padding: '0.75rem 0.875rem 0.75rem 2.75rem',
+    borderRadius: '0.875rem',
+    border: '1.5px solid #e2e8f0',
+    fontSize: '0.9rem',
+    fontFamily: 'inherit',
+    color: '#1e1b4b',
+    background: '#fff',
+    outline: 'none',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4">
-      {/* Search & Filter Section */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-4">Find Your Perfect Teacher</h2>
-        <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="md:col-span-2 relative">
-            <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="What do you want to learn? (e.g. React, Spanish)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              required
-            />
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.25rem' }}>
+
+      {/* Search Card */}
+      <div style={{
+        background: '#fff',
+        borderRadius: '1.5rem',
+        boxShadow: '0 4px 24px rgba(99,102,241,0.09)',
+        border: '1.5px solid rgba(99,102,241,0.08)',
+        padding: '1.75rem',
+        marginBottom: '2rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1.125rem' }}>
+          <div style={{
+            width: '32px', height: '32px', borderRadius: '10px',
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Sparkles size={16} color="#fff" />
           </div>
-          <div className="relative">
-            <Globe className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-            <input // Use simple text input for language for now (could be select)
-              type="text"
-              placeholder="Language (e.g. English)"
-              value={languageFilter}
-              onChange={(e) => setLanguageFilter(e.target.value)}
-              className="w-full pl-10 p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-            />
+          <h2 style={{
+            fontFamily: "'Plus Jakarta Sans', Inter, sans-serif",
+            fontWeight: 700, fontSize: '1.0625rem', color: '#1e1b4b',
+          }}>
+            Find Your Perfect Teacher
+          </h2>
+        </div>
+
+        <form onSubmit={handleSearch}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+
+            {/* Keyword */}
+            <div style={{ position: 'relative', gridColumn: 'span 2' }} className="search-span">
+              <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              <input
+                type="text"
+                placeholder="What do you want to learn? (e.g. React, Spanish)"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={inputStyle}
+                onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.12)'; }}
+                onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+              />
+            </div>
+
+            {/* Language */}
+            <div style={{ position: 'relative' }}>
+              <Globe size={16} color="#94a3b8" style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              <input
+                type="text"
+                placeholder="Language (e.g. English)"
+                value={languageFilter}
+                onChange={e => setLanguageFilter(e.target.value)}
+                style={inputStyle}
+                onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.12)'; }}
+                onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+              />
+            </div>
+
+            {/* Availability */}
+            <div style={{ position: 'relative' }}>
+              <Clock size={16} color="#94a3b8" style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              <select
+                value={availabilityFilter}
+                onChange={e => setAvailabilityFilter(e.target.value)}
+                style={{ ...inputStyle, cursor: 'pointer', appearance: 'none' }}
+                onFocus={e => { e.target.style.borderColor = '#6366f1'; e.target.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.12)'; }}
+                onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none'; }}
+              >
+                <option value="">Any Availability</option>
+                <option value="Weekends">Weekends</option>
+                <option value="Weekdays">Weekdays</option>
+                <option value="Evenings">Evenings</option>
+              </select>
+            </div>
+
           </div>
-          <div className="relative">
-            <Clock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-            <select
-              value={availabilityFilter}
-              onChange={(e) => setAvailabilityFilter(e.target.value)}
-              className="w-full pl-10 p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-            >
-              <option value="">Any Availability</option>
-              <option value="Weekends">Weekends</option>
-              <option value="Weekdays">Weekdays</option>
-              <option value="Evenings">Evenings</option>
-            </select>
-          </div>
-          <div className="md:col-span-4 flex justify-end">
+
+          {/* Search Button */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
             <button
               type="submit"
               disabled={searching}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow transition flex items-center gap-2"
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                padding: '0.6875rem 1.75rem',
+                background: searching ? '#c7d2fe' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                color: '#fff', border: 'none', borderRadius: '9999px',
+                fontWeight: 700, fontSize: '0.9rem', cursor: searching ? 'not-allowed' : 'pointer',
+                boxShadow: '0 4px 16px rgba(99,102,241,0.3)',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+                fontFamily: 'inherit',
+              }}
+              onMouseEnter={e => { if (!searching) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(99,102,241,0.4)'; } }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(99,102,241,0.3)'; }}
             >
-              {searching ? <Loader className="animate-spin" size={20} /> : <Search size={20} />}
-              Find Matches
+              {searching ? <Loader size={16} className="animate-spin" /> : <Search size={16} />}
+              {searching ? 'Searching...' : 'Find Matches'}
             </button>
           </div>
         </form>
       </div>
 
-      {/* Results Grid */}
-      <div className="mb-4 text-sm text-gray-500">
+      {/* Result Count */}
+      <p style={{ fontSize: '0.8125rem', color: '#94a3b8', marginBottom: '1.125rem', fontWeight: 500 }}>
         {skills.length} {skills.length === 1 ? 'teacher' : 'teachers'} found
-      </div>
+      </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {skills.map((skill) => {
+      {/* Grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+        gap: '1.25rem',
+      }}>
+        {skills.map((skill, i) => {
           const ownerId = skill.user_id || skill.owner_id;
           const owner = owners[ownerId];
           return (
-            <div key={skill.id} className={`relative`}>
-              {/* Match Match Badge */}
+            <div
+              key={skill.id}
+              style={{
+                position: 'relative',
+                animation: `slideUp 0.35s ease ${i * 0.04}s both`,
+              }}
+            >
               {skill.score > 0 && (
-                <div className="absolute -top-3 -right-2 z-10 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
-                  <Star size={12} fill="white" /> {skill.score}% Match
+                <div style={{
+                  position: 'absolute', top: '-10px', right: '10px', zIndex: 10,
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: '#fff', fontSize: '0.7rem', fontWeight: 700,
+                  padding: '0.25rem 0.625rem', borderRadius: '9999px',
+                  display: 'flex', alignItems: 'center', gap: '0.25rem',
+                  boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+                }}>
+                  <Star size={10} fill="#fff" /> {skill.score}% Match
                 </div>
               )}
-
               <SkillCard
                 skill={skill}
                 owner={owner}
                 isOwner={ownerId === currentUser?.id}
                 onConnect={handleConnect}
               />
-
-              {/* Match Reasons (if available from matchmaking) */}
-              {skill.match_reasons && skill.match_reasons.length > 0 && (
-                <div className="mt-2 text-xs text-green-700 bg-green-50 p-2 rounded border border-green-100">
+              {skill.match_reasons?.length > 0 && (
+                <div style={{
+                  marginTop: '0.5rem', fontSize: '0.75rem', color: '#059669',
+                  background: '#f0fdf4', padding: '0.5rem 0.75rem',
+                  borderRadius: '0.75rem', border: '1px solid #bbf7d0',
+                }}>
                   <strong>Why matched:</strong> {skill.match_reasons.join(', ')}
                 </div>
               )}
@@ -221,6 +286,20 @@ export default function SkillsPage() {
           onClose={() => setSelectedSkill(null)}
         />
       )}
+
+      <style>{`
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(18px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin { animation: spin 0.8s linear infinite; }
+        @media (max-width: 640px) {
+          .search-span { grid-column: span 1 !important; }
+        }
+      `}</style>
     </div>
   );
 }

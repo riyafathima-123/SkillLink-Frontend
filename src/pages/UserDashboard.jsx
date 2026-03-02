@@ -9,12 +9,12 @@ export default function UserDashboard({ onLogout }) {
     const user = location.state?.user || JSON.parse(localStorage.getItem('user_data') || '{}');
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div style={{ minHeight: '100vh', background: 'var(--bg, #eef0fb)' }}>
             <Header user={user} onLogout={onLogout} />
             <Navigation />
-            <div className="max-w-7xl mx-auto px-4 py-8">
+            <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.25rem' }}>
                 <SkillsPage />
-            </div>
+            </main>
         </div>
     );
 }

@@ -213,6 +213,7 @@ export const connectionAPI = {
   createConnection: (data) => api.post('/connections', data),
   updateConnection: (connectionId, data) => api.put(`/connections/${connectionId}`, data),
   cancelConnection: (connectionId) => api.delete(`/connections/${connectionId}`),
+  submitCompletion: (connectionId) => api.put(`/connections/${connectionId}/complete`),
 };
 
 // ===== CREDITS API =====

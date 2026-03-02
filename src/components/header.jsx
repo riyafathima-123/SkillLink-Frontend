@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Zap, LogOut, Menu, X } from 'lucide-react';
+import { BookOpen, Zap, LogOut, Menu, X, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { creditAPI } from '../services/api';
 
@@ -9,7 +9,6 @@ export default function Header({ user, onLogout }) {
 
   useEffect(() => {
     fetchBalance();
-    // Poll balance every 3 seconds to catch credit changes
     const interval = setInterval(fetchBalance, 3000);
     return () => clearInterval(interval);
   }, []);
@@ -23,72 +22,178 @@ export default function Header({ user, onLogout }) {
     }
   };
 
+  const initials = user?.full_name
+    ? user.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
+
   return (
-    <header className="bg-white shadow-sm border-b-2 border-blue-500 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
+    <header style={{
+      background: 'rgba(255,255,255,0.82)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      borderBottom: '1.5px solid rgba(99,102,241,0.10)',
+      boxShadow: '0 2px 20px rgba(99,102,241,0.07)',
+      position: 'sticky',
+      top: 0,
+      zIndex: 50,
+    }}>
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '68px' }}>
+
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <BookOpen className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-brand">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{
+              width: '40px', height: '40px', borderRadius: '12px',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 14px rgba(99,102,241,0.35)',
+              flexShrink: 0,
+            }}>
+              <BookOpen size={20} color="#fff" />
+            </div>
+            <span style={{
+              fontFamily: "'Plus Jakarta Sans', Inter, sans-serif",
+              fontWeight: 800,
+              fontSize: '1.3125rem',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              letterSpacing: '-0.5px',
+            }}>
               SkillLink
-            </h1>
+            </span>
           </div>
 
-          {/* Desktop View */}
-          <div className="hidden md:flex items-center gap-6">
-            <div className="flex items-center gap-2 bg-gradient-to-r from-yellow-50 to-yellow-100 px-4 py-2 rounded-full border border-yellow-200">
-              <Zap className="w-5 h-5 text-yellow-600" />
-              <span className="font-bold text-yellow-700">{credits}</span>
-              <span className="text-sm text-yellow-600">credits</span>
+          {/* Desktop Right */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }} className="hidden-mobile">
+            {/* Credits Badge */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.375rem',
+              background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
+              border: '1.5px solid #fde68a',
+              borderRadius: '9999px',
+              padding: '0.375rem 0.875rem',
+              boxShadow: '0 2px 8px rgba(251,191,36,0.18)',
+            }}>
+              <Zap size={15} color="#d97706" fill="#d97706" />
+              <span style={{ fontWeight: 700, color: '#b45309', fontSize: '0.875rem' }}>{credits}</span>
+              <span style={{ fontSize: '0.75rem', color: '#d97706' }}>credits</span>
             </div>
 
-            <Link to="/profile" className="text-right border-r pr-6 hover:bg-gray-50 p-2 rounded transition group">
-              <p className="font-semibold text-gray-800 group-hover:text-blue-600">{user?.full_name}</p>
-              <p className="text-xs text-gray-500">{user?.email}</p>
+            {/* User Link */}
+            <Link to="/profile" style={{
+              display: 'flex', alignItems: 'center', gap: '0.625rem',
+              textDecoration: 'none',
+              padding: '0.375rem 0.75rem',
+              borderRadius: '12px',
+              transition: 'background 0.15s',
+              background: 'transparent',
+            }}
+              onMouseEnter={e => e.currentTarget.style.background = '#f0f4ff'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              {/* Avatar */}
+              <div style={{
+                width: '36px', height: '36px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, #6366f1, #a78bfa)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontWeight: 700, fontSize: '0.8125rem',
+                flexShrink: 0,
+                boxShadow: '0 0 0 2.5px #e0e7ff',
+              }}>
+                {initials}
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ fontWeight: 600, color: '#1e1b4b', fontSize: '0.875rem', lineHeight: 1.3 }}>{user?.full_name}</p>
+                <p style={{ fontSize: '0.7rem', color: '#94a3b8', lineHeight: 1.3 }}>{user?.email}</p>
+              </div>
             </Link>
 
+            {/* Logout */}
             <button
               onClick={onLogout}
-              className="p-2 hover:bg-red-50 rounded-lg transition text-red-600"
               title="Logout"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: '36px', height: '36px',
+                borderRadius: '10px', border: 'none',
+                background: 'transparent', cursor: 'pointer',
+                color: '#94a3b8', transition: 'background 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#fff1f2'; e.currentTarget.style.color = '#e11d48'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut size={18} />
             </button>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Hamburger */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
+            style={{
+              display: 'none',
+              padding: '0.5rem', border: 'none', background: 'transparent',
+              cursor: 'pointer', color: '#64748b', borderRadius: '8px',
+            }}
+            className="show-mobile"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
 
-        {/* Mobile View */}
+        {/* Mobile Dropdown */}
         {mobileMenuOpen && (
-          <div className="md:hidden mt-4 pt-4 border-t space-y-3">
-            <div className="flex items-center gap-2 bg-yellow-100 px-3 py-2 rounded-lg">
-              <Zap className="w-4 h-4 text-yellow-600" />
-              <span className="font-bold text-yellow-700">{credits} credits</span>
+          <div style={{
+            borderTop: '1.5px solid #e2e8f0',
+            padding: '1rem 0',
+            display: 'flex', flexDirection: 'column', gap: '0.75rem',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: '#fffbeb', border: '1px solid #fde68a',
+              borderRadius: '9999px', padding: '0.375rem 0.875rem',
+              width: 'fit-content',
+            }}>
+              <Zap size={14} color="#d97706" fill="#d97706" />
+              <span style={{ fontWeight: 700, color: '#b45309', fontSize: '0.875rem' }}>{credits} credits</span>
             </div>
-            <div>
-              <p className="font-semibold text-gray-800">{user?.full_name}</p>
-              <p className="text-xs text-gray-500">{user?.email}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+              <div style={{
+                width: '32px', height: '32px', borderRadius: '50%',
+                background: 'linear-gradient(135deg, #6366f1, #a78bfa)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontWeight: 700, fontSize: '0.75rem',
+              }}>{initials}</div>
+              <div>
+                <p style={{ fontWeight: 600, color: '#1e1b4b', fontSize: '0.875rem' }}>{user?.full_name}</p>
+                <p style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{user?.email}</p>
+              </div>
             </div>
             <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                onLogout();
+              onClick={() => { setMobileMenuOpen(false); onLogout(); }}
+              style={{
+                border: 'none', background: '#fff1f2', color: '#e11d48',
+                borderRadius: '10px', padding: '0.625rem 1rem',
+                fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+                fontSize: '0.875rem',
               }}
-              className="w-full text-left p-2 hover:bg-red-50 rounded text-red-600 font-medium"
             >
               Logout
             </button>
           </div>
         )}
       </div>
+
+      <style>{`
+        @media (min-width: 768px) {
+          .hidden-mobile { display: flex !important; }
+          .show-mobile   { display: none !important; }
+        }
+        @media (max-width: 767px) {
+          .hidden-mobile { display: none !important; }
+          .show-mobile   { display: flex !important; }
+        }
+      `}</style>
     </header>
   );
 }

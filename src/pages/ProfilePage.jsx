@@ -18,7 +18,8 @@ const ProfilePage = () => {
         proficiency: 1,
         credits: 0,
         availability: '',
-        location: ''
+        location: '',
+        isCustomSkill: false
     });
 
     useEffect(() => {
@@ -68,7 +69,7 @@ const ProfilePage = () => {
             alert("Skill added successfully!");
             setShowSkillModal(false);
             setSkillForm({
-                title: '', category: '', description: '', type: 'learn', proficiency: 1, credits: 0, availability: '', location: ''
+                title: '', category: '', description: '', type: 'learn', proficiency: 1, credits: 0, availability: '', location: '', isCustomSkill: false
             });
             fetchProfileData();
         } catch (error) {
@@ -274,14 +275,76 @@ const ProfilePage = () => {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Skill Name</label>
-                                <input
-                                    type="text"
-                                    required
-                                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                    placeholder="e.g. Graphic Design"
-                                    value={skillForm.title}
-                                    onChange={(e) => setSkillForm({ ...skillForm, title: e.target.value })}
-                                />
+                                {skillForm.isCustomSkill ? (
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            required
+                                            className="flex-1 w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                            placeholder="Type your skill..."
+                                            value={skillForm.title}
+                                            onChange={(e) => setSkillForm({ ...skillForm, title: e.target.value })}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setSkillForm({ ...skillForm, isCustomSkill: false, title: '' })}
+                                            className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium whitespace-nowrap transition"
+                                        >
+                                            Back to List
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <select
+                                        required
+                                        className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        value={skillForm.title}
+                                        onChange={(e) => {
+                                            if (e.target.value === 'Other') {
+                                                setSkillForm({ ...skillForm, title: '', isCustomSkill: true });
+                                            } else {
+                                                setSkillForm({ ...skillForm, title: e.target.value });
+                                            }
+                                        }}
+                                    >
+                                        <option value="" disabled>Select a skill...</option>
+                                        <optgroup label="Technical">
+                                            <option value="Python">Python</option>
+                                            <option value="JavaScript">JavaScript</option>
+                                            <option value="React">React</option>
+                                            <option value="SQL">SQL</option>
+                                            <option value="Machine Learning">Machine Learning</option>
+                                            <option value="Cloud Computing">Cloud Computing</option>
+                                            <option value="Data Analysis">Data Analysis</option>
+                                            <option value="Power BI">Power BI</option>
+                                            <option value="Excel Analytics">Excel Analytics</option>
+                                            <option value="Prompt Engineering">Prompt Engineering</option>
+                                            <option value="Data Visualization">Data Visualization</option>
+                                            <option value="Recommendation Systems">Recommendation Systems</option>
+                                        </optgroup>
+                                        <optgroup label="Creative">
+                                            <option value="Graphic Design">Graphic Design</option>
+                                            <option value="UI/UX Design">UI/UX Design</option>
+                                            <option value="Video Editing">Video Editing</option>
+                                            <option value="Content Writing">Content Writing</option>
+                                            <option value="Branding">Branding</option>
+                                            <option value="Photography">Photography</option>
+                                        </optgroup>
+                                        <optgroup label="Other">
+                                            <option value="Digital Marketing">Digital Marketing</option>
+                                            <option value="SEO">SEO</option>
+                                            <option value="Social Media Marketing">Social Media Marketing</option>
+                                            <option value="Sales">Sales</option>
+                                            <option value="Business Strategy">Business Strategy</option>
+                                            <option value="Entrepreneurship">Entrepreneurship</option>
+                                            <option value="Yoga">Yoga</option>
+                                            <option value="Nutrition Planning">Nutrition Planning</option>
+                                            <option value="Cooking">Cooking</option>
+                                            <option value="Language Learning">Language Learning</option>
+                                            <option value="Event Planning">Event Planning</option>
+                                            <option value="Other">Other (Type manually)</option>
+                                        </optgroup>
+                                    </select>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

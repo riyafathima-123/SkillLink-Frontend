@@ -8,8 +8,7 @@ import SkillsPage from './pages/skillsPage';
 import ConnectionsPage from './pages/ConnectionsPage';
 import MySkillsPage from './pages/MySkillsPage';
 import LearningHistoryPage from './pages/LearningHistoryPage';
-import Header from './components/header';
-import Navigation from './components/Navigation';
+import SidebarLayout from './components/SidebarLayout';
 import { userAPI, authAPI } from './services/api';
 import ResetPasswordConfirmPage from './pages/ResetPasswordConfirmPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
@@ -119,7 +118,7 @@ export default function App() {
           path="/dashboard"
           element={
             <ProtectedRoute user={currentUser} allowedRoles={['user', 'admin']}>
-              <UserDashboard onLogout={handleLogout} />
+              <UserDashboard user={currentUser} onLogout={handleLogout} />
             </ProtectedRoute>
           }
         />
@@ -145,7 +144,7 @@ export default function App() {
           path="/skills"
           element={
             <ProtectedRoute user={currentUser}>
-              <div style={{ minHeight: '100vh', background: 'var(--bg, #eef0fb)' }}><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.25rem' }}><SkillsPage /></div></div>
+              <SidebarLayout user={currentUser} onLogout={handleLogout}><SkillsPage /></SidebarLayout>
             </ProtectedRoute>
           }
         />
@@ -153,7 +152,7 @@ export default function App() {
           path="/connections"
           element={
             <ProtectedRoute user={currentUser}>
-              <div style={{ minHeight: '100vh', background: 'var(--bg, #eef0fb)' }}><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.25rem' }}><ConnectionsPage /></div></div>
+              <SidebarLayout user={currentUser} onLogout={handleLogout}><ConnectionsPage /></SidebarLayout>
             </ProtectedRoute>
           }
         />
@@ -161,29 +160,26 @@ export default function App() {
           path="/profile"
           element={
             <ProtectedRoute user={currentUser}>
-              <div style={{ minHeight: '100vh', background: 'var(--bg, #eef0fb)' }}><Header user={currentUser} onLogout={handleLogout} /><Navigation /><ProfilePage /></div>
+              <SidebarLayout user={currentUser} onLogout={handleLogout}><ProfilePage /></SidebarLayout>
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/my-skills"
           element={
             <ProtectedRoute user={currentUser}>
-              <div style={{ minHeight: '100vh', background: 'var(--bg, #eef0fb)' }}><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.25rem' }}><LearningHistoryPage /></div></div>
+              <SidebarLayout user={currentUser} onLogout={handleLogout}><LearningHistoryPage /></SidebarLayout>
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/profile-skills"
           element={
             <ProtectedRoute user={currentUser}>
-              <div style={{ minHeight: '100vh', background: 'var(--bg, #eef0fb)' }}><Header user={currentUser} onLogout={handleLogout} /><Navigation /><div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.25rem' }}><MySkillsPage /></div></div>
+              <SidebarLayout user={currentUser} onLogout={handleLogout}><MySkillsPage /></SidebarLayout>
             </ProtectedRoute>
           }
         />
-
         <Route
           path="/messages"
           element={

@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Camera, MapPin, Mail, Calendar, Edit2, Plus, X, GraduationCap, BookOpen, Clock, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Camera, MapPin, Mail, Calendar, Edit2, Plus, X, GraduationCap, BookOpen, Clock, AlertCircle, Loader } from 'lucide-react';
 import { userAPI, skillAPI } from '../services/api';
 
 const ProfilePage = () => {
     const [user, setUser] = useState(null);
     const [skills, setSkills] = useState([]);
-    const [activeTab, setActiveTab] = useState('about'); // about, learning, teaching
+    const [activeTab, setActiveTab] = useState('about');
     const [showSkillModal, setShowSkillModal] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [avatarUploading, setAvatarUploading] = useState(false);
+    const avatarInputRef = useRef(null);
 
     // Skill Form State
     const [skillForm, setSkillForm] = useState({
@@ -32,7 +34,6 @@ const ProfilePage = () => {
             setUser(userData);
 
             const allSkills = await skillAPI.listSkills();
-            // Filter skills for this user
             const userId = String(userData.id);
             const userSkills = allSkills.filter(s => {
                 const ownerId = s.owner_id || s.ownerId || s.owner || s.user_id;
@@ -43,6 +44,64 @@ const ProfilePage = () => {
             console.error("Failed to load profile:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Compress image to small JPEG base64 using canvas (no storage bucket needed)
+    const resizeImageToBase64 = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+                const MAX = 256;
+                let w = img.width, h = img.height;
+                if (w > MAX || h > MAX) {
+                    if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                    else { w = Math.round(w * MAX / h); h = MAX; }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', 0.82));
+            };
+            img.onerror = () => reject(new Error('Could not load image'));
+            img.src = ev.target.result;
+        };
+        reader.onerror = () => reject(new Error('Could not read file'));
+        reader.readAsDataURL(file);
+    });
+
+    const handleAvatarUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('image/')) {
+            alert('Please select an image file (JPG, PNG, etc.).');
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            alert('Image must be under 10 MB.');
+            return;
+        }
+
+        setAvatarUploading(true);
+        try {
+            // Compress and convert to base64 JPEG client-side
+            const base64 = await resizeImageToBase64(file);
+
+            // Save to backend — no storage bucket required
+            const updated = await userAPI.updateProfile({ avatar_url: base64 });
+
+            // Show the new avatar immediately without a page reload
+            setUser(prev => ({ ...prev, avatar_url: updated?.avatar_url || base64 }));
+            alert('✓ Profile picture updated!');
+        } catch (err) {
+            console.error('Avatar upload failed:', err);
+            const msg = err?.response?.data?.error || err?.message || 'Unknown error';
+            alert('❌ Failed to update profile picture:\n' + msg);
+        } finally {
+            setAvatarUploading(false);
+            if (avatarInputRef.current) avatarInputRef.current.value = '';
         }
     };
 
@@ -89,12 +148,27 @@ const ProfilePage = () => {
                 <div className="absolute -bottom-16 left-8 flex items-end">
                     <div className="relative">
                         <img
-                            src={user?.avatar_url || `https://ui-avatars.com/api/?name=${user?.full_name}&background=random`}
+                            src={user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'U')}&background=6366f1&color=fff&size=128`}
                             alt="Profile"
                             className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
                         />
-                        <button className="absolute bottom-2 right-2 p-1.5 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-600">
-                            <Camera size={16} />
+                        {/* Hidden file input */}
+                        <input
+                            ref={avatarInputRef}
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={handleAvatarUpload}
+                        />
+                        <button
+                            onClick={() => avatarInputRef.current?.click()}
+                            disabled={avatarUploading}
+                            className="absolute bottom-2 right-2 p-1.5 bg-white rounded-full shadow-md hover:bg-indigo-50 text-indigo-600 border border-indigo-200 transition"
+                            title="Change profile picture"
+                        >
+                            {avatarUploading
+                                ? <Loader size={16} className="animate-spin" />
+                                : <Camera size={16} />}
                         </button>
                     </div>
                     <div className="ml-4 mb-4">

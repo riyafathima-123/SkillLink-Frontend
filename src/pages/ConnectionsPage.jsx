@@ -293,7 +293,7 @@ export default function ConnectionsPage() {
                     {conn.status === 'accepted' && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                         <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#059669', textAlign: 'center' }}>
-                          ✓ {conn.learner_completed ? 'Awaiting admin approval' : 'Connection accepted — schedule your session!'}
+                          ✓ Connection accepted — session is active!
                         </p>
                         <div style={{ display: 'flex', gap: '0.625rem' }}>
                           <button
@@ -307,15 +307,15 @@ export default function ConnectionsPage() {
                             }}>
                             <MessageSquare size={15} /> Message
                           </button>
-                          {isMyRequest && !conn.learner_completed && (
-                            <button onClick={() => handleComplete(conn.id)} style={{
+                          {isMyRequest && (
+                            <button onClick={() => navigate(`/assessment/${conn.id}?skillId=${conn.skill_id}`)} style={{
                               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem',
                               background: 'linear-gradient(135deg, #10b981, #059669)',
                               color: '#fff', border: 'none', borderRadius: '0.75rem',
                               padding: '0.625rem', fontWeight: 700, fontSize: '0.875rem', cursor: 'pointer',
                               boxShadow: '0 4px 12px rgba(16,185,129,0.25)', fontFamily: 'inherit',
                             }}>
-                              <Check size={15} /> Mark Complete
+                              <Check size={15} /> Take Assessment
                             </button>
                           )}
                         </div>

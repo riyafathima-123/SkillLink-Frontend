@@ -17,6 +17,7 @@ import UserDashboard from './pages/UserDashboard';
 import ProfilePage from './pages/ProfilePage';
 import MessagesPage from './pages/MessagesPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import AssessmentPage from './pages/AssessmentPage';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -185,6 +186,14 @@ export default function App() {
           element={
             <ProtectedRoute user={currentUser}>
               <MessagesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/assessment/:connectionId"
+          element={
+            <ProtectedRoute user={currentUser}>
+              <SidebarLayout user={currentUser} onLogout={handleLogout}><AssessmentPage /></SidebarLayout>
             </ProtectedRoute>
           }
         />

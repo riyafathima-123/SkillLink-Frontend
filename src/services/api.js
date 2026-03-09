@@ -238,4 +238,11 @@ export const messageAPI = {
   getMessages: (conversationId) => api.get(`/messages/${conversationId}`),
 };
 
+// ===== ASSESSMENT API =====
+export const assessmentAPI = {
+  getQuestions: (skillId) => api.get(`/assessments/${skillId}/questions`),
+  submitAssessment: (data) => api.post('/assessments/submit', data),
+  getResult: (connectionId) => api.get(`/assessments/result/${connectionId}`),
+};
+
 export default api;

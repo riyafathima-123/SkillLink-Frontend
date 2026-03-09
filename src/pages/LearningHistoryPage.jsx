@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Check, Clock, Loader, MessageSquare, GraduationCap } from 'lucide-react';
+import { BookOpen, Check, Clock, Loader, MessageSquare, GraduationCap, ClipboardCheck } from 'lucide-react';
 import { connectionAPI, userAPI, skillAPI } from '../services/api';
 
 export default function LearningHistoryPage() {
@@ -97,8 +97,8 @@ export default function LearningHistoryPage() {
                 <button
                     onClick={() => setActiveTab('learning')}
                     className={`flex-1 py-3 px-6 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${activeTab === 'learning'
-                            ? 'bg-blue-600 text-white shadow-md'
-                            : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                         }`}
                 >
                     <BookOpen className="w-5 h-5" />
@@ -112,8 +112,8 @@ export default function LearningHistoryPage() {
                 <button
                     onClick={() => setActiveTab('completed')}
                     className={`flex-1 py-3 px-6 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${activeTab === 'completed'
-                            ? 'bg-green-600 text-white shadow-md'
-                            : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                        ? 'bg-green-600 text-white shadow-md'
+                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                         }`}
                 >
                     <Check className="w-5 h-5" />
@@ -179,13 +179,24 @@ export default function LearningHistoryPage() {
                                         </div>
                                     )}
 
-                                    <button
-                                        onClick={() => navigate(`/messages?userId=${teacher?.id}`)}
-                                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-4 rounded-lg font-semibold transition flex items-center justify-center gap-2"
-                                    >
-                                        <MessageSquare className="w-4 h-4" />
-                                        Message Teacher
-                                    </button>
+                                    <div className="flex flex-col gap-2">
+                                        <button
+                                            onClick={() => navigate(`/messages?userId=${teacher?.id}`)}
+                                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-4 rounded-lg font-semibold transition flex items-center justify-center gap-2"
+                                        >
+                                            <MessageSquare className="w-4 h-4" />
+                                            Message Teacher
+                                        </button>
+                                        {conn.status === 'accepted' && (
+                                            <button
+                                                onClick={() => navigate(`/assessment/${conn.id}?skillId=${conn.skill_id}`)}
+                                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 rounded-lg font-semibold transition flex items-center justify-center gap-2"
+                                            >
+                                                <ClipboardCheck className="w-4 h-4" />
+                                                Take Assessment
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );

@@ -143,15 +143,46 @@ const ProfilePage = () => {
 
     return (
         <div className="bg-gray-50 min-h-screen pb-12">
-            {/* Header / Cover */}
-            <div className="relative h-48 bg-gradient-to-r from-blue-600 to-indigo-700">
-                <div className="absolute -bottom-16 left-8 flex items-end">
-                    <div className="relative">
-                        <img
-                            src={user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'U')}&background=6366f1&color=fff&size=128`}
-                            alt="Profile"
-                            className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover bg-white"
-                        />
+            {/* Header / Cover - Deep gradient */}
+            <div style={{
+                position: 'relative',
+                marginBottom: '68px',   /* reserve space for overhanging avatar */
+            }}>
+                {/* Gradient banner — blobs clipped here */}
+                <div style={{
+                    height: '200px',
+                    background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4f46e5 70%, #6d28d9 100%)',
+                    overflow: 'hidden',
+                    position: 'relative',
+                }}>
+                    {/* Decorative blobs */}
+                    <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '220px', height: '220px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+                    <div style={{ position: 'absolute', bottom: '-60px', left: '30%', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+                </div>
+
+                {/* Avatar + name — sits OUTSIDE overflow:hidden so it can overhang */}
+                <div style={{
+                    position: 'absolute',
+                    bottom: '-60px',
+                    left: '2rem',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    zIndex: 10,
+                }}>
+                    <div style={{ position: 'relative' }}>
+                        <div style={{
+                            width: '108px', height: '108px', borderRadius: '50%',
+                            border: '4px solid #ffffff',
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.20)',
+                            overflow: 'hidden',
+                            background: '#fff',
+                        }}>
+                            <img
+                                src={user?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.full_name || 'U')}&background=6366f1&color=fff&size=128`}
+                                alt="Profile"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                        </div>
                         {/* Hidden file input */}
                         <input
                             ref={avatarInputRef}
@@ -163,23 +194,38 @@ const ProfilePage = () => {
                         <button
                             onClick={() => avatarInputRef.current?.click()}
                             disabled={avatarUploading}
-                            className="absolute bottom-2 right-2 p-1.5 bg-white rounded-full shadow-md hover:bg-indigo-50 text-indigo-600 border border-indigo-200 transition"
                             title="Change profile picture"
+                            style={{
+                                position: 'absolute', bottom: '4px', right: '4px',
+                                width: '30px', height: '30px',
+                                borderRadius: '50%', border: '2px solid #fff',
+                                background: '#6366f1',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.20)',
+                                transition: 'background 0.15s',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#4f46e5'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#6366f1'}
                         >
                             {avatarUploading
-                                ? <Loader size={16} className="animate-spin" />
-                                : <Camera size={16} />}
+                                ? <Loader size={14} color="#fff" className="animate-spin" />
+                                : <Camera size={14} color="#fff" />}
                         </button>
                     </div>
-                    <div className="ml-4 mb-4">
-                        <h1 className="text-2xl font-bold text-gray-900 mt-16">{user?.full_name}</h1>
-                        <p className="text-gray-600">{user?.role === 'admin' ? 'Administrator' : 'Community Member'}</p>
+                    {/* Name & role */}
+                    <div style={{ paddingBottom: '0.375rem', paddingLeft: '0.875rem' }}>
+                        <h1 style={{ fontFamily: "'Plus Jakarta Sans', Inter, sans-serif", fontWeight: 800, fontSize: '1.375rem', color: '#0f172a', marginBottom: '0.125rem' }}>
+                            {user?.full_name}
+                        </h1>
+                        <p style={{ fontSize: '0.8125rem', color: '#64748b', fontWeight: 500 }}>
+                            {user?.role === 'admin' ? 'Administrator' : 'Community Member'}
+                        </p>
                     </div>
                 </div>
             </div>
 
             {/* Main Content */}
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-20">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8" style={{ paddingTop: '1.75rem' }}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
                     {/* Left Sidebar */}
@@ -202,16 +248,27 @@ const ProfilePage = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl shadow-sm p-6">
-                            <h3 className="font-semibold text-gray-900 mb-4">Stats</h3>
-                            <div className="grid grid-cols-2 gap-4 text-center">
-                                <div className="p-3 bg-blue-50 rounded-lg">
-                                    <div className="text-xl font-bold text-blue-600">{learnSkills.length}</div>
-                                    <div className="text-xs text-blue-700">Learning</div>
+                        {/* Stats as icon mini-cards */}
+                        <div style={{ background: '#fff', borderRadius: '16px', boxShadow: '0px 4px 12px rgba(0,0,0,0.05)', padding: '1.25rem', marginTop: '0.5rem' }}>
+                            <h3 style={{ fontWeight: 700, fontSize: '0.9375rem', color: '#0f172a', marginBottom: '1rem' }}>Stats</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                {/* Learning */}
+                                <div style={{ background: '#eef2ff', borderRadius: '12px', padding: '0.875rem 0.75rem', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>📖</div>
+                                    <div style={{ fontWeight: 800, fontSize: '1.25rem', color: '#4f46e5' }}>{learnSkills.length}</div>
+                                    <div style={{ fontSize: '0.6875rem', color: '#6366f1', fontWeight: 600 }}>Learning</div>
                                 </div>
-                                <div className="p-3 bg-green-50 rounded-lg">
-                                    <div className="text-xl font-bold text-green-600">{teachSkills.length}</div>
-                                    <div className="text-xs text-green-700">Teaching</div>
+                                {/* Teaching */}
+                                <div style={{ background: '#f0fdf4', borderRadius: '12px', padding: '0.875rem 0.75rem', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>🎓</div>
+                                    <div style={{ fontWeight: 800, fontSize: '1.25rem', color: '#15803d' }}>{teachSkills.length}</div>
+                                    <div style={{ fontSize: '0.6875rem', color: '#16a34a', fontWeight: 600 }}>Teaching</div>
+                                </div>
+                                {/* Connections */}
+                                <div style={{ background: '#fdf4ff', borderRadius: '12px', padding: '0.875rem 0.75rem', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '0.875rem', marginBottom: '0.25rem' }}>⚡</div>
+                                    <div style={{ fontWeight: 800, fontSize: '1.25rem', color: '#7e22ce' }}>{user?.credits ?? 0}</div>
+                                    <div style={{ fontSize: '0.6875rem', color: '#9333ea', fontWeight: 600 }}>Credits</div>
                                 </div>
                             </div>
                         </div>
@@ -249,8 +306,15 @@ const ProfilePage = () => {
 
                             <div className="p-6 min-h-[400px]">
                                 {activeTab === 'about' && (
-                                    <div className="text-center py-12 text-gray-500">
-                                        <p>Activity timeline and recent connections coming soon.</p>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <h4 className="font-semibold text-gray-800 mb-1">Bio</h4>
+                                            <p className="text-gray-600 text-sm">{user?.bio || 'No bio added yet.'}</p>
+                                        </div>
+                                        <div className="flex flex-col gap-2 text-sm text-gray-500">
+                                            <div className="flex items-center gap-2"><Mail size={15} /> {user?.email}</div>
+                                            <div className="flex items-center gap-2"><Calendar size={15} /> Joined {new Date(user?.created_at).toLocaleDateString()}</div>
+                                        </div>
                                     </div>
                                 )}
 
@@ -373,11 +437,20 @@ const ProfilePage = () => {
                                         className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                         value={skillForm.title}
                                         onChange={(e) => {
-                                            if (e.target.value === 'Other') {
+                                            const val = e.target.value;
+                                            if (val === 'Other') {
                                                 setSkillForm({ ...skillForm, title: '', isCustomSkill: true });
-                                            } else {
-                                                setSkillForm({ ...skillForm, title: e.target.value });
+                                                return;
                                             }
+                                            // Auto-set category based on skill
+                                            const techSkills = ['Python', 'JavaScript', 'React', 'SQL', 'Machine Learning', 'Cloud Computing', 'Data Analysis', 'Power BI', 'Excel Analytics', 'Prompt Engineering', 'Data Visualization', 'Recommendation Systems'];
+                                            const creativeSkills = ['Graphic Design', 'UI/UX Design', 'Video Editing', 'Content Writing', 'Branding', 'Photography'];
+                                            const languageSkills = ['Language Learning'];
+                                            let autoCategory = 'Business';
+                                            if (techSkills.includes(val)) autoCategory = 'Technology';
+                                            else if (creativeSkills.includes(val)) autoCategory = 'Arts';
+                                            else if (languageSkills.includes(val)) autoCategory = 'Languages';
+                                            setSkillForm({ ...skillForm, title: val, category: autoCategory });
                                         }}
                                     >
                                         <option value="" disabled>Select a skill...</option>

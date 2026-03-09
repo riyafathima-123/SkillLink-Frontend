@@ -1,33 +1,38 @@
 import React from 'react';
-import { Zap, MessageCircle, User } from 'lucide-react';
+import { Zap, MessageCircle } from 'lucide-react';
 
-// Pastel accent colours cycling per card based on skill id
-const ACCENTS = [
-  { bar: '#6366f1', badge: '#e0e7ff', badgeText: '#4338ca' },
-  { bar: '#8b5cf6', badge: '#ede9fe', badgeText: '#6d28d9' },
-  { bar: '#ec4899', badge: '#fce7f3', badgeText: '#9d174d' },
-  { bar: '#14b8a6', badge: '#ccfbf1', badgeText: '#0f766e' },
-  { bar: '#f59e0b', badge: '#fef3c7', badgeText: '#b45309' },
-  { bar: '#3b82f6', badge: '#dbeafe', badgeText: '#1d4ed8' },
-];
+// Category → pill colour mapping
+const CATEGORY_PILLS = {
+  technology: { bg: '#dbeafe', color: '#1d4ed8', label: 'Technology' },
+  technical: { bg: '#dbeafe', color: '#1d4ed8', label: 'Technology' },
+  languages: { bg: '#ede9fe', color: '#6d28d9', label: 'Languages' },
+  language: { bg: '#ede9fe', color: '#6d28d9', label: 'Languages' },
+  arts: { bg: '#fee2e2', color: '#be123c', label: 'Arts' },
+  creative: { bg: '#fee2e2', color: '#be123c', label: 'Creative' },
+  business: { bg: '#dcfce7', color: '#15803d', label: 'Business' },
+  science: { bg: '#fef3c7', color: '#b45309', label: 'Science' },
+  other: { bg: '#f1f5f9', color: '#475569', label: 'Other' },
+};
 
-function getAccent(id) {
-  const idx = typeof id === 'string'
-    ? id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-    : (id || 0);
-  return ACCENTS[idx % ACCENTS.length];
+function getCategoryPill(tags, category) {
+  const raw = (category || tags?.[0] || 'other').toLowerCase().trim();
+  const key = Object.keys(CATEGORY_PILLS).find(k => raw.includes(k)) || 'other';
+  return CATEGORY_PILLS[key];
 }
 
-function Initials({ name, accent }) {
+function AvatarInitials({ name }) {
   const parts = (name || 'U').trim().split(' ');
   const text = (parts[0][0] + (parts[1]?.[0] || '')).toUpperCase();
   return (
     <div style={{
-      width: '38px', height: '38px', borderRadius: '50%',
-      background: `linear-gradient(135deg, ${accent.bar}, ${accent.bar}99)`,
+      width: '36px', height: '36px', borderRadius: '50%',
+      background: 'linear-gradient(135deg, #6366f1, #a78bfa)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       color: '#fff', fontWeight: 700, fontSize: '0.75rem',
-      flexShrink: 0, boxShadow: `0 0 0 2.5px ${accent.badge}`,
+      flexShrink: 0,
+      border: '2px solid #fff',
+      boxShadow: '0 2px 8px rgba(99,102,241,0.25)',
+      overflow: 'hidden',
     }}>
       {text}
     </div>
@@ -40,88 +45,102 @@ export default function SkillCard({ skill, owner, isOwner, onConnect }) {
   const price = skill.credits_per_hour ?? skill.price ?? skill.credits ?? skill.cost ?? 0;
   const tags = skill.tags || (skill.category ? [skill.category] : []);
   const ownerName = owner?.full_name || owner?.name || owner?.username || 'Unknown';
-  const accent = getAccent(skill.id);
-
+  const pill = getCategoryPill(tags, skill.category);
   const isDisabled = skill.type === 'teach' && !skill.is_approved;
 
   return (
-    <div style={{
-      background: '#fff',
-      borderRadius: '1.25rem',
-      boxShadow: '0 2px 16px rgba(99,102,241,0.08)',
-      overflow: 'hidden',
-      transition: 'box-shadow 0.22s ease, transform 0.22s ease',
-      display: 'flex',
-      flexDirection: 'column',
-      border: '1.5px solid rgba(99,102,241,0.07)',
-    }}
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: '16px',
+        boxShadow: '0px 4px 12px rgba(0,0,0,0.05), 0px 1px 3px rgba(0,0,0,0.04)',
+        overflow: 'hidden',
+        transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        border: '1px solid #f1f5f9',
+      }}
       onMouseEnter={e => {
-        e.currentTarget.style.boxShadow = '0 8px 40px rgba(99,102,241,0.16)';
+        e.currentTarget.style.boxShadow = '0px 8px 24px rgba(99,102,241,0.12), 0px 2px 6px rgba(0,0,0,0.04)';
         e.currentTarget.style.transform = 'translateY(-3px)';
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.boxShadow = '0 2px 16px rgba(99,102,241,0.08)';
+        e.currentTarget.style.boxShadow = '0px 4px 12px rgba(0,0,0,0.05), 0px 1px 3px rgba(0,0,0,0.04)';
         e.currentTarget.style.transform = 'translateY(0)';
       }}
     >
-      {/* Accent Strip */}
-      <div style={{ height: '5px', background: accent.bar }} />
-
       <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
-        {/* Title Row */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+
+        {/* Top: Title + Avatar */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.625rem' }}>
           <h3 style={{
             fontFamily: "'Plus Jakarta Sans', Inter, sans-serif",
             fontWeight: 700, fontSize: '1rem',
-            color: '#1e1b4b', lineHeight: 1.35, flex: 1,
+            color: '#0f172a', lineHeight: 1.35, flex: 1,
+            letterSpacing: '-0.15px',
           }}>
             {title}
           </h3>
-          <Initials name={ownerName} accent={accent} />
+          {owner?.avatar_url
+            ? <img src={owner.avatar_url} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '2px solid #fff', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }} />
+            : <AvatarInitials name={ownerName} />
+          }
         </div>
 
-        {/* Description */}
+        {/* Middle: Description */}
         <p style={{
           fontSize: '0.8125rem', color: '#64748b', lineHeight: 1.55,
           display: '-webkit-box', WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          margin: 0,
         }}>
           {description}
         </p>
 
-        {/* Tags */}
-        {tags.length > 0 && (
-          <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-            {tags.map(tag => (
-              <span key={tag} style={{
-                background: accent.badge, color: accent.badgeText,
-                padding: '0.2rem 0.625rem', borderRadius: '9999px',
-                fontSize: '0.7rem', fontWeight: 600,
-              }}>
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* Category pill */}
+        <div>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center',
+            background: pill.bg, color: pill.color,
+            padding: '0.2rem 0.625rem', borderRadius: '9999px',
+            fontSize: '0.7rem', fontWeight: 600,
+          }}>
+            {pill.label}
+          </span>
+        </div>
 
-        {/* Footer */}
+        {/* Bottom: Owner + Price + Button */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '0.75rem 0 0', borderTop: '1.5px solid #f1f5f9', marginTop: 'auto',
+          paddingTop: '0.75rem',
+          borderTop: '1px solid #f1f5f9',
+          marginTop: 'auto',
+          gap: '0.5rem',
         }}>
           <div>
-            <p style={{ fontSize: '0.7rem', color: '#94a3b8', marginBottom: '0.2rem' }}>By {ownerName}</p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-              <Zap size={14} color="#6366f1" fill="#6366f1" />
-              <span style={{ fontWeight: 700, color: '#6366f1', fontSize: '1.0625rem' }}>{price}</span>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>cr/hr</span>
-            </div>
+            <p style={{ fontSize: '0.6875rem', color: '#94a3b8', marginBottom: '0.2rem' }}>By {ownerName}</p>
+            {skill.type !== 'learn' && price > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                <Zap size={13} color="#6366f1" fill="#6366f1" />
+                <span style={{ fontWeight: 700, color: '#6366f1', fontSize: '1rem' }}>{price}</span>
+                <span style={{ fontSize: '0.6875rem', color: '#94a3b8' }}>cr/hr</span>
+              </div>
+            ) : skill.type === 'learn' ? (
+              <span style={{
+                display: 'inline-flex', alignItems: 'center',
+                background: '#dbeafe', color: '#1d4ed8',
+                padding: '0.15rem 0.5rem', borderRadius: '9999px',
+                fontSize: '0.65rem', fontWeight: 600, gap: '0.2rem',
+              }}>
+                📖 Wants to Learn
+              </span>
+            ) : null}
           </div>
 
           {isOwner ? (
             <span style={{
               background: '#f1f5f9', color: '#64748b',
-              padding: '0.4rem 0.875rem', borderRadius: '9999px',
+              padding: '0.375rem 0.875rem', borderRadius: '9999px',
               fontSize: '0.75rem', fontWeight: 600,
             }}>
               Your Skill
@@ -133,18 +152,20 @@ export default function SkillCard({ skill, owner, isOwner, onConnect }) {
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.375rem',
                 padding: '0.5rem 1rem',
-                borderRadius: '9999px',
+                borderRadius: '10px',
                 border: 'none',
-                fontWeight: 700, fontSize: '0.8125rem', cursor: isDisabled ? 'not-allowed' : 'pointer',
-                transition: 'transform 0.15s, box-shadow 0.15s',
+                fontWeight: 700, fontSize: '0.8125rem',
+                cursor: isDisabled ? 'not-allowed' : 'pointer',
+                transition: 'all 0.15s',
                 background: isDisabled
-                  ? '#e2e8f0'
-                  : `linear-gradient(135deg, ${accent.bar}, ${accent.bar}cc)`,
+                  ? '#f1f5f9'
+                  : 'linear-gradient(135deg, #6366f1, #818cf8)',
                 color: isDisabled ? '#94a3b8' : '#fff',
-                boxShadow: isDisabled ? 'none' : `0 4px 14px ${accent.bar}44`,
+                boxShadow: isDisabled ? 'none' : '0 4px 12px rgba(99,102,241,0.30)',
+                fontFamily: 'inherit',
               }}
-              onMouseEnter={e => { if (!isDisabled) e.currentTarget.style.transform = 'scale(1.04)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+              onMouseEnter={e => { if (!isDisabled) { e.currentTarget.style.background = 'linear-gradient(135deg, #4f46e5, #6366f1)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(99,102,241,0.38)'; } }}
+              onMouseLeave={e => { if (!isDisabled) { e.currentTarget.style.background = 'linear-gradient(135deg, #6366f1, #818cf8)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(99,102,241,0.30)'; } }}
             >
               <MessageCircle size={13} />
               {isDisabled ? 'Pending' : 'Connect'}

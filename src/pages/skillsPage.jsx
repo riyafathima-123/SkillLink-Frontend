@@ -19,17 +19,27 @@ export default function SkillsPage() {
   useEffect(() => { fetchInitialData(); }, []);
 
   const fetchInitialData = async () => {
-    try {
-      const user = await userAPI.getMe();
-      setCurrentUser(user);
-      const allSkills = await skillAPI.listSkills();
+    // Load user info and skills in parallel — each independent so one failure doesn't block the other
+    const [userResult, skillsResult] = await Promise.allSettled([
+      userAPI.getMe(),
+      skillAPI.listSkills(),
+    ]);
+
+    if (userResult.status === 'fulfilled') {
+      setCurrentUser(userResult.value);
+    } else {
+      console.warn('Could not load user info:', userResult.reason?.message);
+    }
+
+    if (skillsResult.status === 'fulfilled') {
+      const allSkills = skillsResult.value || [];
       setSkills(allSkills);
       fetchOwners(allSkills);
-    } catch (err) {
-      console.error('Failed to init:', err);
-    } finally {
-      setLoading(false);
+    } else {
+      console.error('Could not load skills:', skillsResult.reason?.message);
     }
+
+    setLoading(false);
   };
 
   const fetchOwners = async (skillsList) => {
@@ -126,11 +136,11 @@ export default function SkillsPage() {
 
       {/* Search Card */}
       <div style={{
-        background: '#fff',
+        background: 'linear-gradient(135deg, #f5f3ff 0%, #eef2ff 60%, #eff6ff 100%)',
         borderRadius: '1.5rem',
-        boxShadow: '0 4px 24px rgba(99,102,241,0.09)',
-        border: '1.5px solid rgba(99,102,241,0.08)',
-        padding: '1.75rem',
+        boxShadow: '0px 4px 12px rgba(0,0,0,0.05), 0px 1px 3px rgba(0,0,0,0.04)',
+        border: '1px solid rgba(99,102,241,0.12)',
+        padding: '2rem 2rem 1.75rem',
         marginBottom: '2rem',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1.125rem' }}>
@@ -200,22 +210,26 @@ export default function SkillsPage() {
           </div>
 
           {/* Search Button */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.125rem' }}>
             <button
               type="submit"
               disabled={searching}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.6875rem 1.75rem',
-                background: searching ? '#c7d2fe' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                color: '#fff', border: 'none', borderRadius: '9999px',
-                fontWeight: 700, fontSize: '0.9rem', cursor: searching ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 16px rgba(99,102,241,0.3)',
-                transition: 'transform 0.15s, box-shadow 0.15s',
+                padding: '0.8125rem 2.25rem',
+                background: searching
+                  ? '#c7d2fe'
+                  : 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)',
+                color: '#fff', border: 'none', borderRadius: '12px',
+                fontWeight: 700, fontSize: '0.9375rem',
+                cursor: searching ? 'not-allowed' : 'pointer',
+                boxShadow: searching ? 'none' : '0 6px 20px rgba(99,102,241,0.38)',
+                transition: 'all 0.18s ease',
                 fontFamily: 'inherit',
+                letterSpacing: '-0.1px',
               }}
-              onMouseEnter={e => { if (!searching) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(99,102,241,0.4)'; } }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(99,102,241,0.3)'; }}
+              onMouseEnter={e => { if (!searching) { e.currentTarget.style.background = 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(99,102,241,0.46)'; e.currentTarget.style.transform = 'translateY(-1px)'; } }}
+              onMouseLeave={e => { if (!searching) { e.currentTarget.style.background = 'linear-gradient(135deg, #6366f1 0%, #818cf8 100%)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(99,102,241,0.38)'; e.currentTarget.style.transform = 'translateY(0)'; } }}
             >
               {searching ? <Loader size={16} className="animate-spin" /> : <Search size={16} />}
               {searching ? 'Searching...' : 'Find Matches'}
@@ -246,18 +260,7 @@ export default function SkillsPage() {
                 animation: `slideUp 0.35s ease ${i * 0.04}s both`,
               }}
             >
-              {skill.score > 0 && (
-                <div style={{
-                  position: 'absolute', top: '-10px', right: '10px', zIndex: 10,
-                  background: 'linear-gradient(135deg, #10b981, #059669)',
-                  color: '#fff', fontSize: '0.7rem', fontWeight: 700,
-                  padding: '0.25rem 0.625rem', borderRadius: '9999px',
-                  display: 'flex', alignItems: 'center', gap: '0.25rem',
-                  boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-                }}>
-                  <Star size={10} fill="#fff" /> {skill.score}% Match
-                </div>
-              )}
+
               <SkillCard
                 skill={skill}
                 owner={owner}
